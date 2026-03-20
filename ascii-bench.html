@@ -265,6 +265,38 @@ no human raters, no LLM judges, no exact-match heuristics.
 
 <p>The evaluations in this benchmark are also conceptually novel. noise-01 measures something that no benchmark has tried to measure before: what does it mean for a model to correctly generate randomness? Is there a noise manifold, and can a model land inside it? The answer turns out to be empirically interesting, and the geometry reveals structure that a character-level metric would completely miss.</p>
 
+<h2>Seeding the Evaluation Space</h2>
+
+<p>Before building any evaluation, we needed to establish what the semantic space looks like. We started with two corpora: noise (18-character operator grids) and blank canvases (structural frames with empty interiors). Embedding both in Gemini Embedding 2 and projecting to 2D PCA reveals how they cluster:</p>
+
+{fig_tag(FIGS / "fig_noise_vs_blank.png", "ascii-bench corpus seeding: PCA projection of noise and blank canvas corpora. Green circles = noise; orange squares = blank canvases. Centroid-to-centroid distance: 0.8105. These two corpora define the first axis of the evaluation space.")}
+
+<p>The centroid-to-centroid distance between noise and blank canvas is <strong>0.8105</strong> — meaningful separation in a space where same-corpus pairs range from 0.76–0.97. This established a baseline: we could measure semantic distance with a real signal.</p>
+
+<div class="callout callout-note">
+<strong>Why blank canvases matter:</strong> The original "bad" case in the proof-of-concept — <code>  _____<br>|     |<br>|_____|</code> (a house outline) — was meant to represent "wrong" art. But it's actually more interesting than that: it is <em>semantically empty</em>. It looks like nothing in particular. It is a blank canvas, not a failure. Understanding this helped clarify what the noise cluster actually measures: not "random characters" but "characters with no visual identity."
+</div>
+
+<h2>The Evaluation Triangle</h2>
+
+<p>The benchmark space is anchored by three semantic regions measured empirically in Gemini Embedding 2's 3072-dimensional manifold:</p>
+
+<ul>
+  <li><strong style="color:#2ecc71;">Noise</strong> — dense operator/punctuation grids; no visual structure, no semantic content. Internal cohesion: 0.9386 (tightest cluster)</li>
+  <li><strong style="color:#e67e22;">Blank canvas</strong> — structural frames with semantic emptiness: boxes, borders, bezels. Internal cohesion: 0.8413</li>
+  <li><strong style="color:#3498db;">Computer ASCII art</strong> — recognizable hardware: keyboards, monitors, mice, floppies. Internal cohesion: 0.8149 (most spread — each piece has its own silhouette)</li>
+</ul>
+
+<div class="callout callout-discovery">
+<strong>Key finding:</strong> blank canvas and computer ASCII art are <em>geometrically close</em> (centroid distance: 0.9166) because both use the same box-drawing grammar. A blank frame <em>is</em> a computer bezel with nothing inside it. The embedding space sees structural kinship where human eyes see semantic difference. The largest gap is between noise and computer art (0.7927) — the two most semantically distinct regions.
+</div>
+
+{fig_tag(FIGS / "fig_triangle.png", "ascii-bench evaluation triangle: PCA projection of all three anchor corpora. Noise (green circles), blank canvas (orange squares), computer ASCII art (blue triangles). Centroid distances shown on the triangle edges. The evaluation space is the geometry between these three anchors.")}
+
+<div class="callout callout-insight">
+<strong>What the triangle means for scoring:</strong> A generated ASCII art piece is measured by where it lands relative to all three anchors. A good computer ASCII art output should be close to the computer centroid, moderately close to blank (structural similarity), and far from noise (semantic difference). The triangle makes this relationship explicit and measurable.
+</div>
+
 <h2>Benchmark Structure</h2>
 
 <table>
@@ -282,6 +314,12 @@ no human raters, no LLM judges, no exact-match heuristics.
       <td><span style="color:#15803d;font-weight:700;">&#10003; COMPLETE</span></td>
       <td>3&times;6 noise grid generation and noise-region membership. Tests whether a model can produce visually random output that lands geometrically inside the noise manifold of the embedding space.</td>
       <td>3 rows &times; 6 chars; no semantic content; multi-script</td>
+    </tr>
+    <tr>
+      <td><strong>computer-01</strong></td>
+      <td><span style="color:#b45309;font-weight:700;">&#9654; IN PROGRESS</span></td>
+      <td>Computer hardware ASCII art generation. Given a hardware name (keyboard, monitor, floppy), generate ASCII art that lands near the computer anchor and away from noise. The first evaluation with a semantic target.</td>
+      <td>Free-form; named subject; computer hardware vocabulary</td>
     </tr>
     <tr>
       <td><strong>story-01</strong></td>
