@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ascii-bench — Geometry as Judge</title>
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #ffffff;
+  color: #222233;
+  line-height: 1.7;
+  font-size: 16.5px;
+}
+
+.page-wrap {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 28px 64px 28px;
+}
+
+/* ── Navigation ── */
+nav {
+  background: #1a1a2e;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+nav .nav-title {
+  color: #e0e7ff;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+}
+nav .nav-links a {
+  color: #a5b4fc;
+  text-decoration: none;
+  margin-left: 22px;
+  font-size: 14px;
+  transition: color 0.15s;
+}
+nav .nav-links a:hover { color: #ffffff; }
+nav .nav-links a.active { color: #ffffff; font-weight: 600; }
+
+/* ── Headings ── */
+h1 { font-size: 2.3rem; color: #1a1a2e; font-weight: 800; letter-spacing: -0.02em; margin: 40px 0 16px 0; }
+h2 {
+  font-size: 1.45rem; color: #1a1a2e; font-weight: 700;
+  margin: 48px 0 14px 0;
+  padding-left: 14px;
+  border-left: 4px solid #4361ee;
+}
+h3 { font-size: 1.15rem; color: #1a1a2e; font-weight: 700; margin: 30px 0 10px 0; }
+
+p { margin: 0 0 18px 0; }
+ul, ol { margin: 0 0 18px 0; padding-left: 28px; }
+li { margin-bottom: 6px; }
+
+/* ── Code ── */
+pre {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  border-radius: 10px;
+  padding: 22px 26px;
+  overflow-x: auto;
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+  font-size: 13.5px;
+  line-height: 1.65;
+  margin: 0 0 24px 0;
+}
+code {
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+  font-size: 0.88em;
+  background: #f0f0fa;
+  color: #3730a3;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+pre code { background: none; color: inherit; padding: 0; font-size: inherit; border-radius: 0; }
+
+/* ── Callout boxes ── */
+.callout {
+  border-radius: 8px;
+  padding: 18px 22px;
+  margin: 24px 0;
+  border-left: 5px solid;
+}
+.callout-note      { background: #eff6ff; border-color: #3b82f6; }
+.callout-insight   { background: #f0fdf4; border-color: #22c55e; }
+.callout-warning   { background: #fffbeb; border-color: #f59e0b; }
+.callout-discovery { background: #fefce8; border-color: #ca8a04; }
+.callout-title {
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+.callout-note .callout-title      { color: #1d4ed8; }
+.callout-insight .callout-title   { color: #15803d; }
+.callout-warning .callout-title   { color: #b45309; }
+.callout-discovery .callout-title { color: #854d0e; }
+
+/* ── Cards ── */
+.card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 24px 0 32px 0; }
+.card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 22px 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: box-shadow 0.18s, transform 0.18s;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.card:hover {
+  box-shadow: 0 6px 20px rgba(67,97,238,0.14);
+  transform: translateY(-3px);
+}
+.card-num { font-size: 0.78rem; font-weight: 700; color: #4361ee; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+.card h3  { margin: 0 0 8px 0; font-size: 1.05rem; color: #1a1a2e; }
+.card p   { margin: 0; font-size: 0.9rem; color: #64748b; }
+
+/* ── Figures ── */
+figure {
+  margin: 28px 0;
+  text-align: center;
+}
+figure img {
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+figcaption {
+  margin-top: 10px;
+  font-size: 0.88rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+/* ── Pull quotes ── */
+.pullquote {
+  font-size: 1.2em;
+  font-style: italic;
+  color: #1a1a2e;
+  border-left: 4px solid #4361ee;
+  padding: 14px 22px;
+  margin: 28px 0;
+  background: #f5f5ff;
+  border-radius: 0 8px 8px 0;
+  line-height: 1.6;
+}
+
+/* ── Hero ── */
+.hero {
+  padding: 56px 0 40px 0;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 48px;
+}
+.hero h1 { margin: 0 0 14px 0; font-size: 2.8rem; line-height: 1.1; }
+.hero .subtitle {
+  font-size: 1.2rem;
+  color: #475569;
+  max-width: 640px;
+  line-height: 1.55;
+  margin-bottom: 32px;
+}
+
+/* ── Table ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 0.95rem;
+}
+th {
+  background: #1a1a2e;
+  color: #e0e7ff;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: top;
+}
+tr:nth-child(even) td { background: #f8fafc; }
+
+/* ── Stack list ── */
+.stack-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0 30px 0;
+  list-style: none;
+  padding: 0;
+}
+.stack-list li {
+  background: #1a1a2e;
+  color: #a5b4fc;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ── Footer ── */
+footer {
+  border-top: 1px solid #e2e8f0;
+  margin-top: 64px;
+  padding: 24px 0 0 0;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-title">Geometry as Judge</a>
+  <div class="nav-links"><a href="index.html">Overview</a><a href="01_paradigm.html">The Space</a><a href="02_experiment.html">The Experiment</a><a href="03_dspy.html">DSPy Integration</a><a href="ascii-bench.html" class="active">ascii-bench</a><a href="04_noise_eval.html">noise-01</a></div>
+</nav>
+<div class="page-wrap">
+
+<h1>ascii-bench</h1>
+
+<p class="subtitle" style="font-size:1.1rem;color:#475569;margin-bottom:32px;">
+A benchmark for evaluating ASCII art generation using geometric evaluation —
+no human raters, no LLM judges, no exact-match heuristics.
+</p>
+
+<h2>What is ascii-bench?</h2>
+
+<p>ascii-bench evaluates ASCII art generation capability using a single core technique: render the output as a PNG, embed it in Gemini Embedding 2's unified multimodal space, and measure where it lands. This turns a qualitative judgment — "does this look like the right thing?" — into a reproducible scalar measurement over a well-defined geometric space.</p>
+
+<p>The approach exploits a structural property of Gemini Embedding 2: it places text, images, audio, and video into the same 3072-dimensional manifold, trained on cross-modal correspondence across the internet. The model has already learned what cats look like, what noise looks like, what Katakana characters look like. When you embed an ASCII art PNG, you get a vector that reflects the embedding model's interpretation of the image's visual content — not its character content.</p>
+
+<p>This separation is precisely what makes the metric useful. A model that generates <code>aaaaaaa</code> in a grid when asked for noise may pass a character-level check but will land far from the noise region in the embedding space. The geometry sees through the characters to the visual impression they create.</p>
+
+<h2>Why it Matters</h2>
+
+<p>Prior ASCII art evaluation has been stuck in one of three modes:</p>
+<ul>
+  <li><strong>Human raters</strong> — accurate but slow, expensive, and impossible to run in an optimizer loop</li>
+  <li><strong>Exact-match</strong> — brittle; only works if you have a fixed reference string</li>
+  <li><strong>LLM-as-judge</strong> — expensive, opaque, introduces circularity when the judged model and the judge share training data</li>
+</ul>
+
+<p>ascii-bench offers a fourth path: <strong>automatic, scalable, cross-modal, script-agnostic geometric evaluation</strong>. It is cheap enough to run at training time, transparent enough to debug (failed outputs can be visualized and measured), and general enough to extend to any writing system without re-labeling.</p>
+
+<p>The evaluations in this benchmark are also conceptually novel. noise-01 measures something that no benchmark has tried to measure before: what does it mean for a model to correctly generate randomness? Is there a noise manifold, and can a model land inside it? The answer turns out to be empirically interesting, and the geometry reveals structure that a character-level metric would completely miss.</p>
+
+<h2>Benchmark Structure</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Evaluation</th>
+      <th>Status</th>
+      <th>What it measures</th>
+      <th>Constraint</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong><a href="04_noise_eval.html">noise-01</a></strong></td>
+      <td><span style="color:#15803d;font-weight:700;">&#10003; COMPLETE</span></td>
+      <td>3&times;6 noise grid generation and noise-region membership. Tests whether a model can produce visually random output that lands geometrically inside the noise manifold of the embedding space.</td>
+      <td>3 rows &times; 6 chars; no semantic content; multi-script</td>
+    </tr>
+    <tr>
+      <td><strong>story-01</strong></td>
+      <td><span style="color:#6b7280;font-style:italic;">&#128300; PLANNED</span></td>
+      <td>Story excerpt &rarr; ASCII art of described character. Cross-modal fidelity: does the rendered art land near the text description in embedding space?</td>
+      <td>3&ndash;8 rows; prose input; character subject</td>
+    </tr>
+    <tr>
+      <td><strong>raw-01</strong></td>
+      <td><span style="color:#6b7280;font-style:italic;">&#128300; PLANNED</span></td>
+      <td>Unconstrained ASCII art quality vs. reference image. Image-to-image cosine between rendered output and a reference PNG.</td>
+      <td>Open height/width; reference image provided</td>
+    </tr>
+    <tr>
+      <td><strong>self-01</strong></td>
+      <td><span style="color:#6b7280;font-style:italic;">&#128300; PLANNED</span></td>
+      <td>Model self-portrait as ASCII art. Measured against the model's own origin in the embedding space &mdash; a form of geometric self-knowledge.</td>
+      <td>Open; no reference; centroid measurement</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>The Scoring Framework</h2>
+
+<p>Each evaluation in ascii-bench produces a combined float score by composing two orthogonal signals:</p>
+
+<h3>1. Structural score (grid adherence)</h3>
+<p>A fast, API-free check that measures whether the output conforms to the structural constraint of the evaluation. For noise-01, this means: does the output have exactly 3 rows of exactly 6 visible characters? The structural score is always computed first — if it is zero, the geometric score is skipped entirely (saving API cost and avoiding penalizing structurally invalid outputs on semantic grounds).</p>
+
+<pre><code>def grid_adherence(text: str, rows: int = 3, cols: int = 6) -> float:
+    # Returns float in [0, 1]
+    # 1.0 = perfect 3×6 structure; 0.0 = completely wrong shape</code></pre>
+
+<h3>2. Geometric score (noise-region membership)</h3>
+<p>The semantic signal. The output is rendered as a PNG, embedded via Gemini Embedding 2 using the interleaved strategy (text + image fused into one vector), and measured against the centroid of the reference corpus. The raw cosine similarity is normalized within the observed noise-to-noise range to produce a score in [0, 1].</p>
+
+<pre><code>def noise_similarity(text: str, centroid: np.ndarray) -> float:
+    png = render(text)
+    vec = embed_interleaved(text, png)
+    sim = cosine(vec, centroid)
+    # Normalize within [noise_floor, noise_ceiling]
+    return float(np.clip((sim - noise_floor) / (noise_spread), 0.0, 1.0))</code></pre>
+
+<h3>Combined score</h3>
+<p>The two signals are combined as a weighted sum, with weight configurable per evaluation. The default for noise-01 is 40% structural, 60% geometric — structural conformance matters, but the geometric signal carries more information about what the output actually looks like.</p>
+
+<pre><code>score = adherence_weight * structural_score + (1 - adherence_weight) * geometric_score
+# adherence_weight default: 0.4</code></pre>
+
+<p>This combined score is a float in [0, 1] suitable for direct use as a DSPy metric. During MIPROv2 bootstrapping, it is thresholded to a boolean (default threshold: 0.50) to filter candidate few-shot demonstrations.</p>
+
+<h2>Stack</h2>
+<ul class="stack-list">
+  <li>Gemini Embedding 2</li>
+  <li>PIL / Pillow</li>
+  <li>NumPy</li>
+  <li>scikit-learn</li>
+  <li>DSPy + MIPROv2</li>
+  <li>GPT-4o</li>
+</ul>
+
+<p style="margin-top:28px;"><a href="04_noise_eval.html" style="color:#4361ee;font-weight:600;text-decoration:none;">Read the noise-01 deep dive &rarr;</a></p>
+
+<footer>
+  <p>Generated from /home/ath/experiments/ &middot; Gemini Embedding 2 &middot; March 2026</p>
+</footer>
+</div>
+</body>
+</html>

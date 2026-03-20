@@ -373,6 +373,28 @@ def copy_experiment_result():
     return dst
 
 
+# ── Figure 6–11: Copy ascii-bench / noise-01 figures ─────────────────────────
+
+NOISE_FIGURES = [
+    "fig_corpus_v2.png",
+    "fig_pairwise_v2.png",
+    "fig_pca_scripts.png",
+    "fig_pca_full.png",
+    "fig_scores_v2.png",
+    "fig_llm_grids_v2.png",
+]
+
+def copy_noise_figures():
+    for name in NOISE_FIGURES:
+        src = EXPERIMENTS / name
+        dst = FIGS / name
+        if src.exists():
+            shutil.copy2(src, dst)
+            print(f"  Copied {name} ({dst.stat().st_size // 1024} KB)")
+        else:
+            print(f"  WARNING: {src} not found — skipping")
+
+
 # ── HTML helpers ──────────────────────────────────────────────────────────────
 
 def b64_figure(fig_path: Path) -> str:
@@ -468,9 +490,10 @@ pre code { background: none; color: inherit; padding: 0; font-size: inherit; bor
   margin: 24px 0;
   border-left: 5px solid;
 }
-.callout-note    { background: #eff6ff; border-color: #3b82f6; }
-.callout-insight { background: #f0fdf4; border-color: #22c55e; }
-.callout-warning { background: #fffbeb; border-color: #f59e0b; }
+.callout-note      { background: #eff6ff; border-color: #3b82f6; }
+.callout-insight   { background: #f0fdf4; border-color: #22c55e; }
+.callout-warning   { background: #fffbeb; border-color: #f59e0b; }
+.callout-discovery { background: #fefce8; border-color: #ca8a04; }
 .callout-title {
   font-weight: 700;
   font-size: 0.85rem;
@@ -478,9 +501,10 @@ pre code { background: none; color: inherit; padding: 0; font-size: inherit; bor
   letter-spacing: 0.06em;
   margin-bottom: 8px;
 }
-.callout-note .callout-title    { color: #1d4ed8; }
-.callout-insight .callout-title { color: #15803d; }
-.callout-warning .callout-title { color: #b45309; }
+.callout-note .callout-title      { color: #1d4ed8; }
+.callout-insight .callout-title   { color: #15803d; }
+.callout-warning .callout-title   { color: #b45309; }
+.callout-discovery .callout-title { color: #854d0e; }
 
 /* ── Cards ── */
 .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 24px 0 32px 0; }
@@ -603,10 +627,12 @@ footer {
 
 def nav(active="index"):
     pages = [
-        ("index",     "index.html",      "Overview"),
-        ("paradigm",  "01_paradigm.html", "The Space"),
-        ("experiment","02_experiment.html","The Experiment"),
-        ("dspy",      "03_dspy.html",     "DSPy Integration"),
+        ("index",      "index.html",       "Overview"),
+        ("paradigm",   "01_paradigm.html",  "The Space"),
+        ("experiment", "02_experiment.html","The Experiment"),
+        ("dspy",       "03_dspy.html",      "DSPy Integration"),
+        ("bench",      "ascii-bench.html",  "ascii-bench"),
+        ("noise01",    "04_noise_eval.html","noise-01"),
     ]
     links = ""
     for key, href, label in pages:
@@ -665,14 +691,15 @@ def read_proof_script() -> str:
 
 def make_index():
     results_fig = FIGS / "fig_experiment_results.png"
+    pca_full_fig = FIGS / "fig_pca_full.png"
 
     body = f"""
 <div class="hero">
   <h1>Geometry as Judge</h1>
-  <p class="subtitle">A new paradigm for automatic model evaluation using multimodal embeddings — no human labels, no rubrics, no LLM judges.</p>
+  <p class="subtitle">A new paradigm for automatic model evaluation using multimodal embeddings — no human labels, no rubrics, no LLM judges. Now includes <strong>ascii-bench</strong>, the first benchmark built on this paradigm.</p>
 </div>
 
-{fig_tag(results_fig, "Experiment results: cosine similarity between 'a cat' and three ASCII art renderings. The good cat shape scores highest.")}
+{fig_tag(results_fig, "Proof of concept: cosine similarity between 'a cat' and three ASCII art renderings. The good cat shape scores highest.")}
 
 <h2>The Core Idea</h2>
 
@@ -684,6 +711,12 @@ def make_index():
 
 {callout("insight", "What We Proved",
   "<p>We embedded the text description <code>'a cat'</code> and three PNG renderings of ASCII art — one recognizable cat shape, one plausible ASCII art of a different subject (a house), and random noise — into Gemini Embedding 2's shared space. The cosine similarity between the text embedding and each image embedding followed the expected ordering: <strong>good &gt; bad &gt; noise</strong>. The metric works without any labels.</p>")}
+
+<h2>ascii-bench: Measuring What Models Know About Noise</h2>
+
+<p>ascii-bench is the first benchmark built directly on this paradigm. Rather than evaluating semantic fidelity to a prompt, it asks a more fundamental question: <strong>can a model produce output that lands in the correct geometric region of the embedding space?</strong> The first evaluation, noise-01, measures 3×6 ASCII noise grid generation across Latin and multilingual scripts.</p>
+
+{fig_tag(pca_full_fig, "ascii-bench noise-01: Full PCA projection of the noise manifold. Reference corpus (circles) and GPT-4o LLM outputs (triangles) plotted by script family. Five distinct clusters — noise has topology.")}
 
 <h2>Explore the Documentation</h2>
 
@@ -703,6 +736,16 @@ def make_index():
     <h3>Wiring it into DSPy</h3>
     <p>How to use this metric as a DSPy training objective and let MIPROv2 optimize prompts automatically.</p>
   </a>
+  <a href="ascii-bench.html" class="card">
+    <div class="card-num">Benchmark</div>
+    <h3>ascii-bench</h3>
+    <p>The benchmark overview: evaluation structure, scoring framework, and planned evaluations.</p>
+  </a>
+  <a href="04_noise_eval.html" class="card">
+    <div class="card-num">Evaluation 1</div>
+    <h3>noise-01 Deep Dive</h3>
+    <p>Full technical analysis of the noise grid evaluation: corpus design, embedding strategies, PCA clustering, and LLM generation scores.</p>
+  </a>
 </div>
 
 <h2>The Stack</h2>
@@ -710,7 +753,9 @@ def make_index():
   <li>Gemini Embedding 2</li>
   <li>PIL / Pillow</li>
   <li>NumPy</li>
+  <li>scikit-learn</li>
   <li>DSPy</li>
+  <li>GPT-4o</li>
   <li>Python 3.11+</li>
 </ul>
 """
@@ -1188,6 +1233,410 @@ trainset = [example, ...]  # add more examples here</code></pre>
     print(f"  Wrote {out.name} ({out.stat().st_size // 1024} KB)")
 
 
+# ── ascii-bench.html ──────────────────────────────────────────────────────────
+
+def make_ascii_bench():
+    body = """
+<h1>ascii-bench</h1>
+
+<p class="subtitle" style="font-size:1.1rem;color:#475569;margin-bottom:32px;">
+A benchmark for evaluating ASCII art generation using geometric evaluation —
+no human raters, no LLM judges, no exact-match heuristics.
+</p>
+
+<h2>What is ascii-bench?</h2>
+
+<p>ascii-bench evaluates ASCII art generation capability using a single core technique: render the output as a PNG, embed it in Gemini Embedding 2's unified multimodal space, and measure where it lands. This turns a qualitative judgment — "does this look like the right thing?" — into a reproducible scalar measurement over a well-defined geometric space.</p>
+
+<p>The approach exploits a structural property of Gemini Embedding 2: it places text, images, audio, and video into the same 3072-dimensional manifold, trained on cross-modal correspondence across the internet. The model has already learned what cats look like, what noise looks like, what Katakana characters look like. When you embed an ASCII art PNG, you get a vector that reflects the embedding model's interpretation of the image's visual content — not its character content.</p>
+
+<p>This separation is precisely what makes the metric useful. A model that generates <code>aaaaaaa</code> in a grid when asked for noise may pass a character-level check but will land far from the noise region in the embedding space. The geometry sees through the characters to the visual impression they create.</p>
+
+<h2>Why it Matters</h2>
+
+<p>Prior ASCII art evaluation has been stuck in one of three modes:</p>
+<ul>
+  <li><strong>Human raters</strong> — accurate but slow, expensive, and impossible to run in an optimizer loop</li>
+  <li><strong>Exact-match</strong> — brittle; only works if you have a fixed reference string</li>
+  <li><strong>LLM-as-judge</strong> — expensive, opaque, introduces circularity when the judged model and the judge share training data</li>
+</ul>
+
+<p>ascii-bench offers a fourth path: <strong>automatic, scalable, cross-modal, script-agnostic geometric evaluation</strong>. It is cheap enough to run at training time, transparent enough to debug (failed outputs can be visualized and measured), and general enough to extend to any writing system without re-labeling.</p>
+
+<p>The evaluations in this benchmark are also conceptually novel. noise-01 measures something that no benchmark has tried to measure before: what does it mean for a model to correctly generate randomness? Is there a noise manifold, and can a model land inside it? The answer turns out to be empirically interesting, and the geometry reveals structure that a character-level metric would completely miss.</p>
+
+<h2>Benchmark Structure</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Evaluation</th>
+      <th>Status</th>
+      <th>What it measures</th>
+      <th>Constraint</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong><a href="04_noise_eval.html">noise-01</a></strong></td>
+      <td><span style="color:#15803d;font-weight:700;">&#10003; COMPLETE</span></td>
+      <td>3&times;6 noise grid generation and noise-region membership. Tests whether a model can produce visually random output that lands geometrically inside the noise manifold of the embedding space.</td>
+      <td>3 rows &times; 6 chars; no semantic content; multi-script</td>
+    </tr>
+    <tr>
+      <td><strong>story-01</strong></td>
+      <td><span style="color:#6b7280;font-style:italic;">&#128300; PLANNED</span></td>
+      <td>Story excerpt &rarr; ASCII art of described character. Cross-modal fidelity: does the rendered art land near the text description in embedding space?</td>
+      <td>3&ndash;8 rows; prose input; character subject</td>
+    </tr>
+    <tr>
+      <td><strong>raw-01</strong></td>
+      <td><span style="color:#6b7280;font-style:italic;">&#128300; PLANNED</span></td>
+      <td>Unconstrained ASCII art quality vs. reference image. Image-to-image cosine between rendered output and a reference PNG.</td>
+      <td>Open height/width; reference image provided</td>
+    </tr>
+    <tr>
+      <td><strong>self-01</strong></td>
+      <td><span style="color:#6b7280;font-style:italic;">&#128300; PLANNED</span></td>
+      <td>Model self-portrait as ASCII art. Measured against the model's own origin in the embedding space &mdash; a form of geometric self-knowledge.</td>
+      <td>Open; no reference; centroid measurement</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>The Scoring Framework</h2>
+
+<p>Each evaluation in ascii-bench produces a combined float score by composing two orthogonal signals:</p>
+
+<h3>1. Structural score (grid adherence)</h3>
+<p>A fast, API-free check that measures whether the output conforms to the structural constraint of the evaluation. For noise-01, this means: does the output have exactly 3 rows of exactly 6 visible characters? The structural score is always computed first — if it is zero, the geometric score is skipped entirely (saving API cost and avoiding penalizing structurally invalid outputs on semantic grounds).</p>
+
+<pre><code>def grid_adherence(text: str, rows: int = 3, cols: int = 6) -> float:
+    # Returns float in [0, 1]
+    # 1.0 = perfect 3×6 structure; 0.0 = completely wrong shape</code></pre>
+
+<h3>2. Geometric score (noise-region membership)</h3>
+<p>The semantic signal. The output is rendered as a PNG, embedded via Gemini Embedding 2 using the interleaved strategy (text + image fused into one vector), and measured against the centroid of the reference corpus. The raw cosine similarity is normalized within the observed noise-to-noise range to produce a score in [0, 1].</p>
+
+<pre><code>def noise_similarity(text: str, centroid: np.ndarray) -> float:
+    png = render(text)
+    vec = embed_interleaved(text, png)
+    sim = cosine(vec, centroid)
+    # Normalize within [noise_floor, noise_ceiling]
+    return float(np.clip((sim - noise_floor) / (noise_spread), 0.0, 1.0))</code></pre>
+
+<h3>Combined score</h3>
+<p>The two signals are combined as a weighted sum, with weight configurable per evaluation. The default for noise-01 is 40% structural, 60% geometric — structural conformance matters, but the geometric signal carries more information about what the output actually looks like.</p>
+
+<pre><code>score = adherence_weight * structural_score + (1 - adherence_weight) * geometric_score
+# adherence_weight default: 0.4</code></pre>
+
+<p>This combined score is a float in [0, 1] suitable for direct use as a DSPy metric. During MIPROv2 bootstrapping, it is thresholded to a boolean (default threshold: 0.50) to filter candidate few-shot demonstrations.</p>
+
+<h2>Stack</h2>
+<ul class="stack-list">
+  <li>Gemini Embedding 2</li>
+  <li>PIL / Pillow</li>
+  <li>NumPy</li>
+  <li>scikit-learn</li>
+  <li>DSPy + MIPROv2</li>
+  <li>GPT-4o</li>
+</ul>
+
+<p style="margin-top:28px;"><a href="04_noise_eval.html" style="color:#4361ee;font-weight:600;text-decoration:none;">Read the noise-01 deep dive &rarr;</a></p>
+"""
+    html = page_shell("ascii-bench", "bench", body)
+    out = ROOT / "ascii-bench.html"
+    out.write_text(html)
+    print(f"  Wrote {out.name} ({out.stat().st_size // 1024} KB)")
+
+
+# ── 04_noise_eval.html ────────────────────────────────────────────────────────
+
+def make_noise_eval():
+    corpus_fig    = FIGS / "fig_corpus_v2.png"
+    pairwise_fig  = FIGS / "fig_pairwise_v2.png"
+    pca_scripts   = FIGS / "fig_pca_scripts.png"
+    pca_full      = FIGS / "fig_pca_full.png"
+    scores_fig    = FIGS / "fig_scores_v2.png"
+    llm_grids_fig = FIGS / "fig_llm_grids_v2.png"
+
+    noise_eval_code = (
+        "def noise_eval(\n"
+        "    text: str,\n"
+        "    noise_centroid: np.ndarray,\n"
+        "    trace=None,\n"
+        "    threshold: float = 0.50,\n"
+        "    adherence_weight: float = 0.4\n"
+        ") -> float | bool:\n"
+        '    """\n'
+        "    Combined noise metric for DSPy.\n"
+        "\n"
+        "    Args:\n"
+        "        text:             The ASCII grid output to evaluate.\n"
+        "        noise_centroid:   Pre-computed centroid of the noise corpus embeddings.\n"
+        "                          Normalized unit vector in 3072-dim space.\n"
+        "        trace:            DSPy trace object.\n"
+        "                          None  = evaluation mode  → returns float in [0,1]\n"
+        "                          not None = bootstrapping → returns bool (score >= threshold)\n"
+        "        threshold:        Bootstrap pass threshold. Default 0.50.\n"
+        "        adherence_weight: Weight of structural score vs. geometric score.\n"
+        "                          0.4 = 40% structural, 60% geometric. Default 0.4.\n"
+        '    """\n'
+        "    # Step 1: structural check (no API cost)\n"
+        "    adherence = grid_adherence(text)\n"
+        "\n"
+        "    # Step 2: geometric check (only if structurally non-zero)\n"
+        "    if adherence == 0.0:\n"
+        "        score = 0.0\n"
+        "    else:\n"
+        "        rendered   = render(text)\n"
+        "        pred_vec   = embed_interleaved(text, rendered)   # text+PNG → one vector\n"
+        "        similarity = cosine(pred_vec, noise_centroid)\n"
+        "\n"
+        "        # Normalize raw cosine into [0, 1] using observed noise-to-noise range\n"
+        "        # noise_floor ≈ 0.896  noise_ceil ≈ 0.968 (interleaved, Latin corpus)\n"
+        "        similarity_norm = float(np.clip(\n"
+        "            (similarity - noise_floor) / (noise_ceil - noise_floor), 0.0, 1.0\n"
+        "        ))\n"
+        "\n"
+        "        score = (adherence_weight * adherence\n"
+        "                 + (1 - adherence_weight) * similarity_norm)\n"
+        "\n"
+        "    # Step 3: dual-mode return (matches DSPy metric contract)\n"
+        "    return score if trace is None else score >= threshold\n"
+    )
+
+    dspy_integration_code = (
+        "import dspy\n"
+        "from functools import partial\n"
+        "\n"
+        "# Pre-compute the centroid once at startup\n"
+        "noise_centroid = build_noise_centroid()\n"
+        "\n"
+        "# Wrap into a DSPy-compatible metric\n"
+        "def noise_metric(example, prediction, trace=None):\n"
+        "    return noise_eval(\n"
+        "        text           = prediction.grid,\n"
+        "        noise_centroid = noise_centroid,\n"
+        "        trace          = trace,\n"
+        "        threshold      = 0.50,\n"
+        "        adherence_weight = 0.4,\n"
+        "    )\n"
+        "\n"
+        "# Plug into MIPROv2\n"
+        "optimizer = dspy.MIPROv2(\n"
+        "    metric     = noise_metric,\n"
+        "    auto       = 'light',\n"
+        "    num_threads= 4,\n"
+        ")\n"
+        "optimized = optimizer.compile(\n"
+        "    NoiseGridModule(),\n"
+        "    trainset = trainset,\n"
+        "    max_bootstrapped_demos = 3,\n"
+        "    max_labeled_demos = 2,\n"
+        ")\n"
+    )
+
+    body2 = f"""
+<h1>noise-01</h1>
+<p class="subtitle" style="font-size:1.1rem;color:#475569;margin-bottom:32px;">
+Deep technical dive — 3&times;6 ASCII noise grid generation and geometric measurement.
+Part of <a href="ascii-bench.html" style="color:#4361ee;">ascii-bench</a>.
+</p>
+
+<h2>The Evaluation</h2>
+
+<p>noise-01 is the simplest possible evaluation in ascii-bench. It asks a model to generate a <strong>3-row &times; 6-character grid of ASCII noise</strong> — 18 characters with no semantic content, no recognizable shapes, no letters or digits. Then it measures two things:</p>
+
+<ol>
+  <li><strong>Grid adherence</strong> — does the output conform to the 3&times;6 structural constraint?</li>
+  <li><strong>Noise-region membership</strong> — does the rendered output land in the noise region of Gemini's embedding space, as defined by a reference corpus?</li>
+</ol>
+
+<p>The constraint "exactly 18 characters in a 3&times;6 grid" is not arbitrary. It is small enough that a failure to adhere is clearly a structural problem, not an ambiguity. It is also large enough to have meaningful visual texture when rendered — 18 characters at 48px monospace produce an image with visible density patterns. The embedding model reads those patterns.</p>
+
+{callout("note", "Why This is Interesting",
+  "<p>No one has measured this before, because before multimodal embeddings there was no obvious way to measure it. What does it mean for a language model to correctly generate randomness? The answer turns out to involve geometry, topology, and writing system identity in ways that character-level metrics completely miss.</p>")}
+
+<h2>The Reference Corpus v0.1 — Latin Keyboard Symbols</h2>
+
+<p>The reference corpus defines the noise region. Version 0.1 contains five hand-crafted 3&times;6 grids, all using shifted keyboard characters (the symbols accessed by holding Shift on a standard QWERTY keyboard). No letters, no digits — only punctuation and operator characters.</p>
+
+<p>The choice of shifted characters is deliberate. These are the characters a model reaches for when asked to produce something with no semantic content in its native Latin environment. They are the model's natural visual vocabulary for "noise" — the characters that live at the boundary between meaningful and meaningless in the training distribution.</p>
+
+<p>The keyboard spiral observation: the first grid (<code>x@#$%^&amp;*()_+!?&gt;&lt;&#123;&#125;</code>) traces a path across the keyboard that approximates a golden ratio spiral when read left-to-right, top-to-bottom. This was not designed — it emerged from asking "what arrangement of shifted characters feels most random?" The geometry of the keyboard encodes its own notion of visual density and traversal order.</p>
+
+<pre><code># The five Latin reference grids (v0.1)
+
+"x@#$%^"   # keyboard spiral — the golden ratio path
+"&amp;*()_+"
+"!?&gt;&lt;&#123;&#125;"
+
+"~`|\\;'"   # upper row sweep + punctuation descent
+'",.:?!'
+"[]&#123;&#125;()"
+
+"!@#$%^"   # bracket / operator cluster
+"&amp;*-+=&lt;"
+"&gt;/?|~`"
+
+"^%$#@!"   # diagonal shift sweep
+"*&amp;()_+"
+"&gt;&lt;&#123;&#125;[]"
+
+"@#$&amp;*("   # dense operator field
+")!?&gt;&lt;&#123;"
+"&#125;|~`\\;"</code></pre>
+
+<h2>The Three Embedding Strategies</h2>
+
+<p>Before committing to a single embedding strategy for the metric, we compared three approaches on the same corpus and test cases:</p>
+
+<h3>Image — embed the rendered PNG only</h3>
+<p>The ASCII grid is rendered to a PNG and embedded as an image. Only visual information is available to the embedding model — it sees the density and spatial arrangement of characters, not their symbolic identity.</p>
+
+<h3>Text — embed the raw ASCII string only</h3>
+<p>The raw ASCII string is embedded as text. The embedding model reads the character sequence symbolically — it knows these are parentheses and dollar signs, not just dense marks.</p>
+
+<h3>Interleaved — PNG + raw string, fused into one vector</h3>
+<p>Both the raw text and the rendered PNG are passed as parts of a single <code>Content</code> object. Gemini Embedding 2 fuses them into one 3072-dim vector. This strategy provides both visual and symbolic information simultaneously.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Strategy</th>
+      <th>Noise-to-noise range</th>
+      <th>Spread</th>
+      <th>Noise score</th>
+      <th>Non-noise score</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Image</td>
+      <td>[0.9197, 0.9798]</td>
+      <td>0.0601</td>
+      <td>1.000</td>
+      <td>0.000</td>
+    </tr>
+    <tr>
+      <td>Text</td>
+      <td>[0.8703, 0.9609]</td>
+      <td>0.0905</td>
+      <td>1.000</td>
+      <td>0.000</td>
+    </tr>
+    <tr>
+      <td><strong>Interleaved</strong></td>
+      <td>[0.8960, 0.9680]</td>
+      <td>0.0720</td>
+      <td>1.000</td>
+      <td>0.000</td>
+    </tr>
+  </tbody>
+</table>
+
+{callout("insight", "Total Separation on Every Strategy",
+  "<p>All three strategies achieve a noise score of 1.000 and non-noise score of 0.000 — perfect separation between noise grids and non-noise grids (alphabetic, numeric, semantic, wrong-size). The embedding space cleanly partitions the noise region regardless of embedding mode.</p>")}
+
+<p>The strategies differ in their internal structure. Text has the largest spread (0.0905) — the noise grids are more differentiated from each other symbolically than visually. Interleaved acts as the strictest judge of wrong-size outputs: a grid with the right characters but wrong dimensions gets a lower interleaved score than image alone. We use interleaved as the default.</p>
+
+<h2>The Multilingual Expansion — Corpus v0.2</h2>
+
+<p>Corpus v0.2 adds seven grids across four non-Latin script families: Katakana, Cyrillic, Greek, and Arabic. This tests whether noise is a universal concept in the embedding manifold, or anchored to the Latin keyboard.</p>
+
+{fig_tag(corpus_fig, "ascii-bench noise-01 Reference Corpus v0.2: 5 Latin grids (top row) and 7 multilingual grids (bottom row). Each grid rendered with a script-appropriate font, colored by script family.")}
+
+{fig_tag(pairwise_fig, "Noise-to-noise pairwise cosine similarity matrix for the full v0.2 corpus (interleaved strategy). Tick labels colored by script family. Within-script pairs cluster at the high end; cross-script pairs spread into the lower range.")}
+
+<h2>The PCA Finding — Noise has Topology</h2>
+
+{callout("discovery", "Discovery: Five Distinct Script Clusters",
+  "<p>A 2D PCA projection of the 12 corpus vectors reveals five completely distinct clusters — one per script family. Latin keyboard symbols: top-right, tight cluster. Cyrillic: top-left, tight pair. Greek: near Cyrillic but distinct. Arabic: bottom-left-center. Katakana: bottom-left corner, most distant from Latin. <strong>Noise is not a single universal region. Each writing system occupies a distinct sub-region of the noise manifold.</strong></p>")}
+
+{fig_tag(pca_scripts, "2D PCA of the 12-grid v0.2 corpus (interleaved embeddings, 3072-dim → 2D). Five distinct clusters, one per script family. 61.7% variance explained by the first two principal components. Dashed convex hulls mark per-script boundaries.")}
+
+<p>The PCA projection explains 61.7% of variance in just two dimensions — a high fraction for 3072-dimensional vectors, indicating that script family identity is the dominant source of variation in the corpus. The remaining 38.3% reflects within-script variation between individual grid designs.</p>
+
+<p>This finding has a concrete calibration implication: <strong>a unified centroid is a Latin-dominated centroid</strong>. With 5 Latin grids out of 12, the centroid is pulled toward the Latin cluster. Scores for Latin grids are systematically higher, and scores for non-Latin grids systematically lower, regardless of geometric quality relative to their own script cluster. Per-script centroids would be more accurate.</p>
+
+<h2>LLM Generation — the Framing Effect</h2>
+
+<p>GPT-4o was asked to generate 3&times;6 noise grids under 10 different framings: six Latin-oriented and four multilingual. Each framing shapes what the model understands as "noise" — and those differences are geometrically measurable.</p>
+
+{fig_tag(llm_grids_fig, "GPT-4o generated noise grids across 10 framings (grid adherence score shown per panel). The multilingual framings produce visually distinct outputs that render correctly with script-appropriate fonts.")}
+
+<h2>Full PCA — LLM Outputs Land Near Their Script Clusters</h2>
+
+{fig_tag(pca_full, "Full PCA projection: reference corpus (circles) and all 10 LLM outputs (triangles), colored by script family. LLM outputs land near their respective script reference clusters. LLM Katakana noise is geometrically coherent with reference Katakana noise.")}
+
+<p>The most striking result: LLM outputs land near their respective script reference clusters. This is behavioral introspection without self-report — we learn about the model's relationship to writing systems by measuring where its outputs live geometrically, without asking the model anything about itself.</p>
+
+<p>Notable: the "keyboard self" framing drifts far from the noise cluster on PCA. When asked to generate what it "sees" when looking at a keyboard, the model produces a conceptual map of the keyboard rather than noise — a mix of characters that is coherent but not random. The geometry distinguishes between "what keyboards contain" and "what noise looks like."</p>
+
+<h2>Scores</h2>
+
+{fig_tag(scores_fig, "Score bar chart across reference corpus (left, colored by script family) and LLM outputs (Latin framings center, multilingual framings right). Dashed lines show noise-region floor and ceiling from the interleaved pairwise matrix.")}
+
+<p>Scores against the unified corpus centroid:</p>
+
+<table>
+  <thead>
+    <tr><th>Source</th><th>Script</th><th>Score range</th><th>Note</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Reference corpus</td><td>Latin</td><td>0.87&ndash;0.93</td><td>Centroid-dominant script, highest scores</td></tr>
+    <tr><td>Reference corpus</td><td>Cyrillic</td><td>0.83&ndash;0.85</td><td>Visually similar to Latin</td></tr>
+    <tr><td>Reference corpus</td><td>Greek</td><td>0.79</td><td>Alphabetic but visually distinct</td></tr>
+    <tr><td>Reference corpus</td><td>Arabic</td><td>0.75</td><td>Visually distinct, right-to-left</td></tr>
+    <tr><td>Reference corpus</td><td>Katakana</td><td>0.73&ndash;0.75</td><td>Most distant from Latin</td></tr>
+    <tr><td>LLM (keyboard native)</td><td>Latin</td><td>0.93</td><td>Native noise vocabulary, highest LLM score</td></tr>
+    <tr><td>LLM (plain ask)</td><td>Latin</td><td>0.88</td><td>Solid default</td></tr>
+    <tr><td>LLM (visual static)</td><td>Latin</td><td>0.71</td><td>Framing pulls toward peripheral noise</td></tr>
+    <tr><td>LLM (keyboard self)</td><td>Latin</td><td>&lt;0.71</td><td>Drifts far from noise region on PCA</td></tr>
+    <tr><td>LLM (cyrillic)</td><td>Cyrillic</td><td>0.80</td><td>Near reference cluster</td></tr>
+    <tr><td>LLM (greek)</td><td>Greek</td><td>0.81</td><td>Near reference cluster</td></tr>
+    <tr><td>LLM (katakana)</td><td>Katakana</td><td>0.66</td><td>Below reference; centroid bias applies</td></tr>
+    <tr><td>LLM (arabic)</td><td>Arabic</td><td>0.65</td><td>Below reference; centroid bias applies</td></tr>
+  </tbody>
+</table>
+
+{callout("note", "Centroid Bias",
+  "<p>All non-Latin scores are depressed by the Latin-dominated unified centroid. This is not a failure of those outputs — it is a calibration artifact. Per-script centroids would give fairer absolute scores. The PCA projection is the better diagnostic for non-Latin outputs.</p>")}
+
+<h2>The Metric Function</h2>
+
+<pre><code>{noise_eval_code}</code></pre>
+
+<h2>DSPy Integration</h2>
+
+<p>The metric wraps into a DSPy-compatible function and plugs directly into MIPROv2. The centroid is pre-computed once at startup to avoid redundant API calls during the optimization loop:</p>
+
+<pre><code>{dspy_integration_code}</code></pre>
+
+{callout("insight", "What MIPROv2 Will Optimize",
+  "<p>Given this metric, MIPROv2 will search for instructions that produce outputs landing deeper inside the noise manifold. It will discover that shifted keyboard characters score higher than alphanumerics, that the 3&times;6 structure must be maintained, and that some framings are geometrically more coherent than others — without being told any of this explicitly.</p>")}
+
+<h2>Open Questions</h2>
+
+<ul>
+  <li><strong>Per-script centroids.</strong> Build a separate centroid per script family. Remove calibration bias and give fair absolute scores across writing systems.</li>
+  <li><strong>Font sensitivity.</strong> How much does score change with different font choices? Does a pixel font produce a different noise manifold?</li>
+  <li><strong>Grid size sensitivity.</strong> Would a 4&times;8 or 6&times;6 grid produce a different manifold? Is the noise region scale-invariant?</li>
+  <li><strong>Script expansion.</strong> Devanagari, Hebrew, CJK ideographs — each would add a new cluster. How many distinct script clusters exist in the manifold?</li>
+  <li><strong>Adversarial outputs.</strong> What outputs maximize the noise score without being perceptually noisy? Are there degenerate high-scoring patterns?</li>
+</ul>
+
+<p style="margin-top:32px;"><a href="ascii-bench.html" style="color:#4361ee;font-weight:600;text-decoration:none;">&larr; Back to ascii-bench overview</a></p>
+"""
+
+    html = page_shell("noise-01 Deep Dive", "noise01", body2)
+    out = ROOT / "04_noise_eval.html"
+    out.write_text(html)
+    print(f"  Wrote {out.name} ({out.stat().st_size // 1024} KB)")
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -1197,12 +1646,15 @@ def main():
     make_pipeline()
     make_dspy_loop()
     copy_experiment_result()
+    copy_noise_figures()
 
     print("\nGenerating HTML pages...")
     make_index()
     make_paradigm()
     make_experiment()
     make_dspy()
+    make_ascii_bench()
+    make_noise_eval()
 
     print("\nSummary:")
     all_files = sorted(ROOT.glob("*.html")) + sorted(FIGS.glob("*.png"))
