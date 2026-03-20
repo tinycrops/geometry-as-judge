@@ -585,6 +585,128 @@ The triangle is not just a scoring trick. It defines a coordinate system in embe
 <tr><td><strong>Average</strong></td><td><strong>57.0%</strong></td><td><strong>56.8%</strong></td></tr>
 </table>
 
+<h3>Model Outputs</h3>
+
+<p>Baseline (left) and optimized (right) ASCII art for each test subject. These are the actual model outputs scored by the metric.</p>
+
+<h3 style="margin-top:24px;">microchip <span style="font-weight:400;color:#64748b;">&mdash; baseline 0.606 &rarr; optimized 0.563</span></h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0 24px 0;">
+<pre><code>.--------.
+  /|  CPU  |\
+ | |______| |
+  |  ____  |
+ /| |    | |\
++_+_|____|_|_+
+  / /| || |\ \</code></pre>
+<pre><code>.--------.
+  / .------. \
+ |  | CPU  |  |
+ |  '------'  |
+  \          /
+   '--------'
+  || || || ||
+==||==||==||==
+  || || || ||</code></pre>
+</div>
+
+<h3 style="margin-top:24px;">server rack <span style="font-weight:400;color:#64748b;">&mdash; baseline 0.613 &rarr; optimized 0.672</span></h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0 24px 0;">
+<pre><code>+----------------------+
+| [] []  [] []  [] []  |
+|----------------------|
+| [====] [====] [====] |
+| [====] [====] [====] |
+|----------------------|
+| [####] [####] [####] |
+| [####] [####] [####] |
++----------------------+</code></pre>
+<pre><code>+-----------+
+|[==][==][==]|
+|[==][==][==]|
+|[==][==][==]|
+|[==][==][==]|
+|[==][==][==]|
+| [  ][  ]   |
++-----------+</code></pre>
+</div>
+
+<h3 style="margin-top:24px;">joystick <span style="font-weight:400;color:#64748b;">&mdash; baseline 0.474 &rarr; optimized 0.519</span></h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0 24px 0;">
+<pre><code>   __
+  /__\
+   ||
+  (==)
+   ||
+ __||__
+|______|</code></pre>
+<pre><code>   ___
+   /___\
+     |
+    / \
+   /___\
+  | o o |
+  |  o  |
+  |_____|</code></pre>
+</div>
+
+<h3 style="margin-top:24px;">CD-ROM <span style="font-weight:400;color:#64748b;">&mdash; baseline 0.527 &rarr; optimized 0.583</span></h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0 24px 0;">
+<pre><code>.-"""-.
+ /  .--.   \
+|  /    \   |
+| |  ()  |  |
+|  \    /   |
+ \  '--'   /
+   '-.__.-'</code></pre>
+<pre><code>.-====-.
+ .-'  __   '-.
+ /   .'  '.    \
+|   /  ()  \    |
+|   \      /    |
+ \    '.__.'   /
+  '-.______.-'</code></pre>
+</div>
+
+<h3 style="margin-top:24px;">router <span style="font-weight:400;color:#64748b;">&mdash; baseline 0.520 &rarr; optimized 0.526</span></h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0 24px 0;">
+<pre><code>/\
+   /  \
+  | () |
+  |____|
+  /|  |\
+ /_|__|_\
+   /__\</code></pre>
+<pre><code>|\   /|
+   | \ / |
+  /|  V  |\
+ /_| [ ] |_\
+   | [*] |
+   | [*] |
+   |_[___]|
+    /___\</code></pre>
+</div>
+
+<h3 style="margin-top:24px;">speaker <span style="font-weight:400;color:#64748b;">&mdash; baseline 0.680 &rarr; optimized 0.542</span></h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0 24px 0;">
+<pre><code>_______
+ |  ___  |
+ | |###| |
+ | |###| |
+ | |###| |
+ | |###| |
+ |_______|
+    | |
+   _|_|_</code></pre>
+<pre><code>_______
+ |       |
+ |  o o  |
+ |   o   |
+ |       |
+ |_______|
+   |   |
+   |___|</code></pre>
+</div>
+
 <h3>Key observations</h3>
 
 <ul>
