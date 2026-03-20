@@ -635,9 +635,6 @@ def nav(active="index"):
         ("dspy",       "03_dspy.html",      "DSPy Integration"),
         ("bench",      "ascii-bench.html",  "ascii-bench"),
         ("noise01",    "04_noise_eval.html","noise-01"),
-        ("computer01", "05_computer_eval.html","computer-01"),
-        ("story01",    "06_story_eval.html","story-01"),
-        ("cost",       "07_cost_scaling.html","Cost &amp; Scaling"),
     ]
     links = ""
     for key, href, label in pages:
@@ -1319,18 +1316,6 @@ no human raters, no LLM judges, no exact-match heuristics.
       <td><span style="color:#15803d;font-weight:700;">&#10003; COMPLETE</span></td>
       <td>3&times;6 noise grid generation and noise-region membership. Tests whether a model can produce visually random output that lands geometrically inside the noise manifold of the embedding space.</td>
       <td>3 rows &times; 6 chars; no semantic content; multi-script</td>
-    </tr>
-    <tr>
-      <td><strong>computer-01</strong></td>
-      <td><span style="color:#15803d;font-weight:700;">&#10003; COMPLETE</span></td>
-      <td>Computer hardware ASCII art generation. Given a hardware name (keyboard, monitor, floppy), generate ASCII art that lands near the computer anchor and away from noise. The first evaluation with a semantic target. Baseline 57.0%, interleaved embedding correctly discriminates quality (server rack 0.67, joystick 0.47).</td>
-      <td>Free-form; named subject; computer hardware vocabulary</td>
-    </tr>
-    <tr>
-      <td><strong>story-01</strong></td>
-      <td><span style="color:#15803d;font-weight:700;">&#10003; COMPLETE</span></td>
-      <td>Story excerpt &rarr; ASCII art of described character. Cross-modal fidelity: text-to-image embedding similarity. Baseline 18.0%, optimized 21.8%. Metric correctly discriminates: mushroom 0.355 vs mermaid 0.081.</td>
-      <td>3&ndash;8 rows; prose input; character subject</td>
     </tr>
     <tr>
       <td><strong>raw-01</strong></td>

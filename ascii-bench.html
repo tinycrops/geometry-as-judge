@@ -233,7 +233,7 @@ footer {
 <body>
 <nav>
   <a href="index.html" class="nav-title">Geometry as Judge</a>
-  <div class="nav-links"><a href="index.html">Overview</a><a href="01_paradigm.html">The Space</a><a href="02_experiment.html">The Experiment</a><a href="03_dspy.html">DSPy Integration</a><a href="ascii-bench.html" class="active">ascii-bench</a><a href="04_noise_eval.html">noise-01</a><a href="05_computer_eval.html">computer-01</a><a href="06_story_eval.html">story-01</a><a href="07_cost_scaling.html">Cost &amp; Scaling</a></div>
+  <div class="nav-links"><a href="index.html">Overview</a><a href="01_paradigm.html">The Space</a><a href="02_experiment.html">The Experiment</a><a href="03_dspy.html">DSPy Integration</a><a href="ascii-bench.html" class="active">ascii-bench</a><a href="04_noise_eval.html">noise-01</a></div>
 </nav>
 <div class="page-wrap">
 
@@ -314,18 +314,6 @@ no human raters, no LLM judges, no exact-match heuristics.
       <td><span style="color:#15803d;font-weight:700;">&#10003; COMPLETE</span></td>
       <td>3&times;6 noise grid generation and noise-region membership. Tests whether a model can produce visually random output that lands geometrically inside the noise manifold of the embedding space.</td>
       <td>3 rows &times; 6 chars; no semantic content; multi-script</td>
-    </tr>
-    <tr>
-      <td><strong>computer-01</strong></td>
-      <td><span style="color:#15803d;font-weight:700;">&#10003; COMPLETE</span></td>
-      <td>Computer hardware ASCII art generation. Given a hardware name (keyboard, monitor, floppy), generate ASCII art that lands near the computer anchor and away from noise. The first evaluation with a semantic target. Baseline 57.0%, interleaved embedding correctly discriminates quality (server rack 0.67, joystick 0.47).</td>
-      <td>Free-form; named subject; computer hardware vocabulary</td>
-    </tr>
-    <tr>
-      <td><strong>story-01</strong></td>
-      <td><span style="color:#15803d;font-weight:700;">&#10003; COMPLETE</span></td>
-      <td>Story excerpt &rarr; ASCII art of described character. Cross-modal fidelity: text-to-image embedding similarity. Baseline 18.0%, optimized 21.8%. Metric correctly discriminates: mushroom 0.355 vs mermaid 0.081.</td>
-      <td>3&ndash;8 rows; prose input; character subject</td>
     </tr>
     <tr>
       <td><strong>raw-01</strong></td>
