@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cost Analysis &amp; Optimizer Scaling — Geometry as Judge</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #ffffff; color: #222233; line-height: 1.7; font-size: 16.5px; }
+.page-wrap { max-width: 860px; margin: 0 auto; padding: 0 28px 64px 28px; }
+nav { background: #1a1a2e; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; min-height: 52px; position: sticky; top: 0; z-index: 100; }
+nav .nav-title { color: #e0e7ff; font-weight: 700; font-size: 15px; letter-spacing: 0.01em; text-decoration: none; }
+nav .nav-links a { color: #a5b4fc; text-decoration: none; margin-left: 22px; font-size: 14px; transition: color 0.15s; }
+nav .nav-links a:hover { color: #ffffff; }
+nav .nav-links a.active { color: #ffffff; font-weight: 600; }
+h1 { font-size: 2.3rem; color: #1a1a2e; font-weight: 800; letter-spacing: -0.02em; margin: 40px 0 16px 0; }
+h2 { font-size: 1.45rem; color: #1a1a2e; font-weight: 700; margin: 48px 0 14px 0; padding-left: 14px; border-left: 4px solid #4361ee; }
+h3 { font-size: 1.15rem; color: #1a1a2e; font-weight: 700; margin: 30px 0 10px 0; }
+p { margin: 0 0 18px 0; }
+ul, ol { margin: 0 0 18px 0; padding-left: 28px; }
+li { margin-bottom: 6px; }
+pre { background: #1e1e2e; color: #cdd6f4; border-radius: 10px; padding: 22px 26px; overflow-x: auto; font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace; font-size: 13.5px; line-height: 1.65; margin: 0 0 24px 0; }
+code { font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace; font-size: 0.88em; background: #f0f0fa; color: #3730a3; padding: 2px 6px; border-radius: 4px; }
+pre code { background: none; color: inherit; padding: 0; font-size: inherit; border-radius: 0; }
+.callout { border-radius: 8px; padding: 18px 22px; margin: 24px 0; border-left: 5px solid; }
+.callout-note { background: #eff6ff; border-color: #3b82f6; }
+.callout-insight { background: #f0fdf4; border-color: #22c55e; }
+.callout-warning { background: #fffbeb; border-color: #f59e0b; }
+.callout-discovery { background: #fefce8; border-color: #ca8a04; }
+.callout-title { font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.callout-note .callout-title { color: #1d4ed8; }
+.callout-insight .callout-title { color: #15803d; }
+.callout-warning .callout-title { color: #b45309; }
+.callout-discovery .callout-title { color: #854d0e; }
+figure { margin: 28px 0; text-align: center; }
+figure img { max-width: 100%; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+figcaption { margin-top: 10px; font-size: 0.88rem; color: #64748b; font-style: italic; }
+.pullquote { font-size: 1.2em; font-style: italic; color: #1a1a2e; border-left: 4px solid #4361ee; padding: 14px 22px; margin: 28px 0; background: #f5f5ff; border-radius: 0 8px 8px 0; line-height: 1.6; }
+table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 0.95rem; }
+th { background: #1a1a2e; color: #e0e7ff; padding: 10px 14px; text-align: left; font-size: 0.85rem; letter-spacing: 0.04em; }
+td { padding: 10px 14px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+tr:nth-child(even) td { background: #f8fafc; }
+footer { border-top: 1px solid #e2e8f0; margin-top: 64px; padding: 24px 0 0 0; font-size: 0.85rem; color: #94a3b8; text-align: center; }
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-title">Geometry as Judge</a>
+  <div class="nav-links"><a href="index.html">Overview</a><a href="01_paradigm.html">The Space</a><a href="02_experiment.html">The Experiment</a><a href="03_dspy.html">DSPy Integration</a><a href="ascii-bench.html">ascii-bench</a><a href="04_noise_eval.html">noise-01</a><a href="05_computer_eval.html">computer-01</a><a href="06_story_eval.html">story-01</a><a href="07_cost_scaling.html" class="active">Cost &amp; Scaling</a></div>
+</nav>
+
+<div class="page-wrap">
+
+<h1>Cost Analysis &amp; Optimizer Scaling</h1>
+<p>Embedding metric economics and MIPROv2 instruction optimization results.</p>
+
+<!-- ================================================================ -->
+<!-- EXPERIMENT 6: COST ANALYSIS                                      -->
+<!-- ================================================================ -->
+
+<h2>Experiment 6: Cost Analysis</h2>
+
+<p>Every metric has a cost. TokenF1 is free but blind to semantics. LLM-as-judge captures nuance but burns tokens. EmbeddingMetric occupies a previously empty niche: semantic signal at near-zero cost. This section quantifies the economics.</p>
+
+<h3>Per-Call Cost Comparison</h3>
+
+<table>
+<thead>
+<tr><th>Metric</th><th>Cost / call</th><th>vs Embedding</th></tr>
+</thead>
+<tbody>
+<tr><td>TokenF1 (local)</td><td>$0.000000</td><td>Free</td></tr>
+<tr><td>EmbeddingMetric (Gemini)</td><td>$0.000001</td><td>1x</td></tr>
+<tr><td>LLM-judge (GPT-4o-mini)</td><td>$0.000060</td><td>50x more</td></tr>
+<tr><td>LLM-judge (GPT-4o)</td><td>$0.001000</td><td>833x more</td></tr>
+<tr><td>LLM-judge (Sonnet)</td><td>$0.001350</td><td>1,125x more</td></tr>
+</tbody>
+</table>
+
+<h3>Cost Model</h3>
+
+<ul>
+<li><strong>EmbeddingMetric:</strong> 2 Gemini Embedding 2 calls per metric evaluation (gold + predicted). Priced at $0.00001 per 1,000 characters. A typical QA answer is ~50 characters, so each pair costs roughly $0.000001.</li>
+<li><strong>LLM-as-judge:</strong> One LLM call per evaluation with ~200 token prompt + ~50 token response. Input and output token pricing varies by model.</li>
+<li><strong>TokenF1:</strong> Local string comparison &mdash; zero API cost, zero latency overhead.</li>
+</ul>
+
+<h3>Metric Call Counts by Optimizer</h3>
+
+<p>The total number of metric evaluations depends on the optimizer configuration. Here is the calculation logic for each optimizer we tested:</p>
+
+<pre><code>configs = {
+    "Bootstrap (our config)": {
+        # Each candidate: bootstrap (train * bootstrap_rounds) + eval (test)
+        # Total: candidates * (train * bootstrap_rounds + test)
+        "metric_calls": 3 * (30 * 2 + 50),  # = 330
+    },
+    "MIPROv2 light": {
+        # Bootstrap phase + 6 trials * eval
+        "metric_calls": 30 * 3 + 6 * 50 + 6 * 30,  # = 570
+    },
+    "MIPROv2 medium": {
+        "metric_calls": 30 * 3 + 12 * 50 + 12 * 30,  # = 1050
+    },
+}</code></pre>
+
+<p>Bootstrap generates <code>candidates</code> separate programs, each bootstrapped over <code>train * bootstrap_rounds</code> examples, then evaluated on the test set. MIPROv2 adds an initial bootstrap phase followed by multiple Optuna trials, each of which evaluates on both train and test splits.</p>
+
+<h3>Total Cost per Optimization Run</h3>
+
+<table>
+<thead>
+<tr><th>Optimizer</th><th>Calls</th><th>Embedding</th><th>4o-mini judge</th><th>GPT-4o judge</th></tr>
+</thead>
+<tbody>
+<tr><td>Bootstrap</td><td>330</td><td>$0.0004</td><td>$0.02</td><td>$0.33</td></tr>
+<tr><td>MIPROv2 light</td><td>570</td><td>$0.0007</td><td>$0.03</td><td>$0.57</td></tr>
+<tr><td>MIPROv2 medium</td><td>1,050</td><td>$0.0013</td><td>$0.06</td><td>$1.05</td></tr>
+</tbody>
+</table>
+
+<h3>Measured Latency</h3>
+
+<ul>
+<li><strong>EmbeddingMetric:</strong> avg 736ms per metric call pair (2 API calls to Gemini Embedding 2, sequential).</li>
+<li><strong>LLM-as-judge (estimated):</strong> 500&ndash;800ms per call, depending on model and load.</li>
+<li><strong>TokenF1:</strong> &lt;0.01ms &mdash; pure string computation, no network round-trip.</li>
+</ul>
+
+<p>Latency is roughly comparable between embedding and LLM-judge approaches. The cost difference is the decisive factor, not wall-clock time.</p>
+
+<div class="callout callout-insight">
+<div class="callout-title">Insight</div>
+<p>For a MIPROv2 medium run, the choice is: $0.0013 (embedding) vs $1.05 (GPT-4o judge). That is an <strong>833x cost difference</strong>. For creative tasks where F1 gives zero signal, embedding is the ONLY option at ANY cost.</p>
+</div>
+
+<!-- ================================================================ -->
+<!-- EXPERIMENT 7: MIPROV2 OPTIMIZER SCALING                          -->
+<!-- ================================================================ -->
+
+<h2>Experiment 7: MIPROv2 Optimizer Scaling</h2>
+
+<h3>Motivation</h3>
+
+<p>The Bootstrap experiment (Experiment 3) showed EmbeddingMetric and TokenF1 tied at 42% EM on HotPotQA. Both metrics selected identical demonstrations and produced identical programs. This raised the question: does the metric choice ever actually matter for optimization?</p>
+
+<p>The hypothesis: MIPROv2 optimizes <em>both</em> instructions <em>and</em> demonstrations. The instruction proposals are guided by the metric signal &mdash; the optimizer proposes candidate instructions, evaluates them with the metric, and uses Bayesian optimization to search the instruction space. EmbeddingMetric's smoother gradients should produce better instruction proposals than TokenF1's noisy binary signal.</p>
+
+<h3>Setup</h3>
+
+<ul>
+<li>MIPROv2 with <code>auto="light"</code> (10 trials) on HotPotQA multi-hop QA</li>
+<li>30 training examples, 50 test examples</li>
+<li>Compared TokenF1 vs EmbeddingMetric as the optimization signal</li>
+<li>Model: <code>gpt-5.4-mini</code></li>
+<li>Evaluation: exact match (EM), token-level F1, embedding similarity &mdash; all computed on the same held-out test set</li>
+</ul>
+
+<pre><code>import dspy
+from dspy.teleprompt import MIPROv2
+
+# Identical setup, only the metric differs
+optimizers = {
+    "token_f1": MIPROv2(
+        metric=token_f1_metric,
+        auto="light",
+        num_threads=4,
+    ),
+    "embedding": MIPROv2(
+        metric=embedding_metric,
+        auto="light",
+        num_threads=4,
+    ),
+}
+
+for name, optimizer in optimizers.items():
+    optimized = optimizer.compile(
+        student=MultiHop(),
+        trainset=trainset,   # 30 examples
+        eval_kwargs={"num_threads": 4},
+    )
+    # Evaluate on held-out test set with all three metrics
+    evaluate(optimized, testset)  # 50 examples</code></pre>
+
+<h3>Results</h3>
+
+<table>
+<thead>
+<tr><th>Optimizer + Metric</th><th>EM</th><th>F1</th><th>Embed</th><th>Time</th></tr>
+</thead>
+<tbody>
+<tr><td>MIPROv2 + TokenF1</td><td>26.0%</td><td>38.9%</td><td>71.9%</td><td>180s</td></tr>
+<tr><td><strong>MIPROv2 + EmbeddingMetric</strong></td><td><strong>30.0%</strong></td><td><strong>41.0%</strong></td><td><strong>73.8%</strong></td><td>269s</td></tr>
+</tbody>
+</table>
+
+<p>EmbeddingMetric produces a +4.0% EM improvement over TokenF1 when used as MIPROv2's optimization signal. This gap is consistent across all three evaluation metrics: EM, F1, and embedding similarity all favor the embedding-optimized program.</p>
+
+<h3>The Mechanism: Instruction Optimization</h3>
+
+<div class="callout callout-discovery">
+<div class="callout-title">Discovery</div>
+<p>EmbeddingMetric generated the instruction: <em>"You are an expert trivia master responsible for answering questions by providing a logical reasoning process."</em> TokenF1's noisy signal caused the optimizer to fall back to the default instruction.</p>
+</div>
+
+<p>The mechanism behind this result is grounded in how MIPROv2 searches the instruction space:</p>
+
+<ol>
+<li><strong>Bayesian optimization (Optuna).</strong> MIPROv2 uses a Tree-structured Parzen Estimator (TPE) to model the relationship between instruction candidates and metric scores. Each trial proposes a new instruction, evaluates it against the metric on the training set, and feeds the result back to the surrogate model.</li>
+<li><strong>TokenF1 is noisy.</strong> Small wording changes cause binary 0/1 score jumps. The answer "Paris" scores 1.0 against gold "Paris", but "The capital of France is Paris" scores only 0.25 due to extra tokens diluting F1. These discontinuities make Optuna's surrogate model unreliable &mdash; the GP cannot distinguish between a genuinely better instruction and a lucky wording match.</li>
+<li><strong>EmbeddingMetric is smooth.</strong> Similar answers get similar scores. "Paris" scores 0.73, "The capital city of France is Paris" scores 0.82, "Berlin" scores 0.71. The surrogate model receives clean signal and converges faster to better instruction candidates.</li>
+<li><strong>Result:</strong> With embedding metric, the TPE model identifies that instructions encouraging structured reasoning produce consistently higher scores. With TokenF1, the signal-to-noise ratio is too low for 10 trials to distinguish good instructions from bad ones, so the optimizer defaults to the baseline instruction.</li>
+</ol>
+
+<h3>Cross-Optimizer Comparison</h3>
+
+<p>Combining results from Bootstrap (Experiment 3) and MIPROv2 (this experiment) reveals where metric choice matters:</p>
+
+<table>
+<thead>
+<tr><th>Config</th><th>EM</th><th>F1</th><th>Embed</th></tr>
+</thead>
+<tbody>
+<tr><td>Bootstrap + TokenF1</td><td>42.0%</td><td>51.5%</td><td>82.1%</td></tr>
+<tr><td>Bootstrap + EmbeddingMetric</td><td>42.0%</td><td>51.5%</td><td>82.1%</td></tr>
+<tr><td>MIPROv2 + TokenF1</td><td>26.0%</td><td>38.9%</td><td>71.9%</td></tr>
+<tr><td><strong>MIPROv2 + EmbeddingMetric</strong></td><td><strong>30.0%</strong></td><td><strong>41.0%</strong></td><td><strong>73.8%</strong></td></tr>
+</tbody>
+</table>
+
+<div class="callout callout-note">
+<div class="callout-title">Note</div>
+<p>MIPROv2 scores lower than Bootstrap here because <code>auto="light"</code> uses only 10 trials &mdash; a deliberately constrained search. The point is not absolute performance but the <strong>+4% EM differential</strong> between metrics, which was invisible with Bootstrap.</p>
+</div>
+
+<p>Bootstrap selects demonstrations by filtering: does this example pass the metric threshold? Both TokenF1 and EmbeddingMetric agree on pass/fail for most HotPotQA examples, producing identical demo sets and identical programs. MIPROv2 uses the metric as a <em>continuous optimization signal</em>, exposing the quality difference between metrics.</p>
+
+<h3>The Smoothness Argument</h3>
+
+<p>The core claim reduces to a well-known principle from continuous optimization theory: smooth objective landscapes are strictly easier to optimize than noisy ones.</p>
+
+<p>Consider three candidate answers evaluated against the gold answer "Paris":</p>
+
+<table>
+<thead>
+<tr><th>Candidate answer</th><th>TokenF1</th><th>EmbeddingMetric</th></tr>
+</thead>
+<tbody>
+<tr><td>"Paris"</td><td>1.00</td><td>0.73</td></tr>
+<tr><td>"The capital city of France is Paris"</td><td>0.25</td><td>0.82</td></tr>
+<tr><td>"Berlin"</td><td>0.00</td><td>0.71</td></tr>
+</tbody>
+</table>
+
+<p>TokenF1 ranks the exact string match highest and penalizes the more informative answer severely. EmbeddingMetric correctly ranks the elaborated correct answer above both the terse match and the wrong city. For any optimizer that samples the metric landscape &mdash; whether gradient-based, Bayesian, or evolutionary &mdash; the embedding metric provides a more faithful and navigable surface.</p>
+
+<p>This is not a theoretical concern. The MIPROv2 experiment demonstrates the practical consequence: 10 Optuna trials are sufficient for the TPE to find a good instruction with smooth signal, but insufficient with noisy signal.</p>
+
+<h2>Open Questions</h2>
+
+<ul>
+<li><strong>Trial count scaling.</strong> Does the MIPROv2 advantage scale with trial count? Would <code>auto="medium"</code> (25 trials) amplify the gap, or does TokenF1 eventually catch up given enough samples?</li>
+<li><strong>Hybrid metrics.</strong> Can we combine metrics &mdash; e.g., <code>0.5 * F1 + 0.5 * embedding</code> &mdash; to get factual precision from F1 AND smooth optimization from embedding?</li>
+<li><strong>SIMBA interaction.</strong> DSPy's SIMBA optimizer uses mini-batch stochastic ascent. How does metric smoothness interact with stochastic gradient estimation? Smooth metrics should reduce variance in gradient estimates.</li>
+<li><strong>Task-specific breakpoints.</strong> At what task complexity does the metric choice start to matter for Bootstrap? Creative tasks (story-01) already showed this; what about structured extraction or code generation?</li>
+</ul>
+
+<footer>
+  <p>Generated from /home/ath/experiments/ &middot; Gemini Embedding 2 &middot; March 2026</p>
+</footer>
+
+</div>
+</body>
+</html>

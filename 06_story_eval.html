@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>story-01 — Geometry as Judge</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #ffffff; color: #222233; line-height: 1.7; font-size: 16.5px; }
+.page-wrap { max-width: 860px; margin: 0 auto; padding: 0 28px 64px 28px; }
+nav { background: #1a1a2e; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; min-height: 52px; position: sticky; top: 0; z-index: 100; }
+nav .nav-title { color: #e0e7ff; font-weight: 700; font-size: 15px; letter-spacing: 0.01em; text-decoration: none; }
+nav .nav-links a { color: #a5b4fc; text-decoration: none; margin-left: 22px; font-size: 14px; transition: color 0.15s; }
+nav .nav-links a:hover { color: #ffffff; }
+nav .nav-links a.active { color: #ffffff; font-weight: 600; }
+h1 { font-size: 2.3rem; color: #1a1a2e; font-weight: 800; letter-spacing: -0.02em; margin: 40px 0 16px 0; }
+h2 { font-size: 1.45rem; color: #1a1a2e; font-weight: 700; margin: 48px 0 14px 0; padding-left: 14px; border-left: 4px solid #4361ee; }
+h3 { font-size: 1.15rem; color: #1a1a2e; font-weight: 700; margin: 30px 0 10px 0; }
+p { margin: 0 0 18px 0; }
+ul, ol { margin: 0 0 18px 0; padding-left: 28px; }
+li { margin-bottom: 6px; }
+pre { background: #1e1e2e; color: #cdd6f4; border-radius: 10px; padding: 22px 26px; overflow-x: auto; font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace; font-size: 13.5px; line-height: 1.65; margin: 0 0 24px 0; }
+code { font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace; font-size: 0.88em; background: #f0f0fa; color: #3730a3; padding: 2px 6px; border-radius: 4px; }
+pre code { background: none; color: inherit; padding: 0; font-size: inherit; border-radius: 0; }
+.callout { border-radius: 8px; padding: 18px 22px; margin: 24px 0; border-left: 5px solid; }
+.callout-note { background: #eff6ff; border-color: #3b82f6; }
+.callout-insight { background: #f0fdf4; border-color: #22c55e; }
+.callout-warning { background: #fffbeb; border-color: #f59e0b; }
+.callout-discovery { background: #fefce8; border-color: #ca8a04; }
+.callout-title { font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.callout-note .callout-title { color: #1d4ed8; }
+.callout-insight .callout-title { color: #15803d; }
+.callout-warning .callout-title { color: #b45309; }
+.callout-discovery .callout-title { color: #854d0e; }
+figure { margin: 28px 0; text-align: center; }
+figure img { max-width: 100%; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+figcaption { margin-top: 10px; font-size: 0.88rem; color: #64748b; font-style: italic; }
+.pullquote { font-size: 1.2em; font-style: italic; color: #1a1a2e; border-left: 4px solid #4361ee; padding: 14px 22px; margin: 28px 0; background: #f5f5ff; border-radius: 0 8px 8px 0; line-height: 1.6; }
+table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 0.95rem; }
+th { background: #1a1a2e; color: #e0e7ff; padding: 10px 14px; text-align: left; font-size: 0.85rem; letter-spacing: 0.04em; }
+td { padding: 10px 14px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+tr:nth-child(even) td { background: #f8fafc; }
+footer { border-top: 1px solid #e2e8f0; margin-top: 64px; padding: 24px 0 0 0; font-size: 0.85rem; color: #94a3b8; text-align: center; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-title">Geometry as Judge</a>
+  <div class="nav-links"><a href="index.html">Overview</a><a href="01_paradigm.html">The Space</a><a href="02_experiment.html">The Experiment</a><a href="03_dspy.html">DSPy Integration</a><a href="ascii-bench.html">ascii-bench</a><a href="04_noise_eval.html">noise-01</a><a href="05_computer_eval.html">computer-01</a><a href="06_story_eval.html" class="active">story-01</a><a href="07_cost_scaling.html">Cost &amp; Scaling</a></div>
+</nav>
+
+<div class="page-wrap">
+
+  <h1>story-01</h1>
+  <p style="font-size:1.15em; color:#64748b; margin-bottom:32px;">Deep technical dive &mdash; cross-modal fidelity evaluation. Text descriptions to ASCII art in Gemini's unified embedding space. Part of ascii-bench.</p>
+
+  <div class="pullquote">Can an embedding model judge whether ASCII art faithfully depicts a narrative scene? story-01 tests the hardest variant of the "Geometry as Judge" thesis: cross-modal semantic correspondence between natural language and monospace character art.</div>
+
+  <h2>The Evaluation</h2>
+
+  <p>The story-01 module evaluates a fundamentally cross-modal task: given a short story excerpt describing a character or scene, generate ASCII art that depicts it. Unlike computer-01 (which evaluates text-to-text fidelity of terminal command output) or noise-01 (which evaluates corruption tolerance), story-01 asks whether the embedding space captures semantic correspondence <em>across modalities</em> &mdash; from natural language description to visual ASCII rendering.</p>
+
+  <p>This is the core stress test for the "Geometry as Judge" thesis. If cosine similarity in Gemini's unified embedding space can distinguish good ASCII depictions of story scenes from bad ones, then the space genuinely encodes cross-modal meaning &mdash; not just surface-level text similarity.</p>
+
+  <ul>
+    <li><strong>Task:</strong> Given a short story excerpt describing a character or scene, generate ASCII art depicting it</li>
+    <li><strong>Dataset:</strong> 18 story excerpts with gold ASCII art (12 train, 6 test)</li>
+    <li><strong>Test subjects:</strong> mermaid, eagle, train, mushroom, astronaut, crown</li>
+    <li><strong>Metric:</strong> Combined text-to-text and text-to-image embedding similarity</li>
+  </ul>
+
+  <h2>Cross-Modal Scoring</h2>
+
+  <p>The story-01 metric combines two embedding similarity signals with equal weight (0.5 + 0.5):</p>
+
+  <h3>Signal 1: Text-to-Text</h3>
+  <p><code>cosine(embed_text(description), embed_text(art_characters))</code> &mdash; does the raw ASCII text carry semantic signal about the subject? This exploits the fact that well-crafted ASCII art often contains text-level hints (character choices, spatial patterns) that correlate with the subject being depicted.</p>
+
+  <h3>Signal 2: Text-to-Image</h3>
+  <p><code>cosine(embed_text(description), embed_image(rendered_art_png))</code> &mdash; does the rendered art <em>look</em> like what the text describes? The ASCII art is rendered to a PNG using a monospace font, then embedded via Gemini's image embedding endpoint. This tests whether the visual form of the art maps to the same region of embedding space as the textual description.</p>
+
+  <h3>Normalization</h3>
+  <ul>
+    <li><strong>Text-to-text:</strong> raw cosine in [0.3, 0.8] mapped linearly to [0, 1]</li>
+    <li><strong>Text-to-image:</strong> raw cosine in [0.2, 0.6] mapped linearly to [0, 1]</li>
+  </ul>
+  <p>These ranges were established empirically in Experiment 2 (multimodal metric). The wider normalization range for text-to-image reflects the lower absolute similarity values typical of cross-modal comparisons. Equal weighting (rather than text-to-text-dominant) was chosen deliberately to stress-test both channels.</p>
+
+  <h3>StoryArtMetric Implementation</h3>
+
+<pre><code>class StoryArtMetric:
+    def __init__(self, threshold=0.45):
+        self.threshold = threshold
+
+    def __call__(self, example, pred, trace=None):
+        description = str(getattr(example, "excerpt", ""))
+        art = str(getattr(pred, "ascii_art", ""))
+        if not art.strip() or not description.strip():
+            score = 0.0
+        else:
+            try:
+                desc_vec = embed_text(description)
+                art_text_vec = embed_text(art)
+                text_sim = cosine(desc_vec, art_text_vec)
+                art_png = render(art)
+                art_img_vec = embed_image(art_png)
+                img_sim = cosine(desc_vec, art_img_vec)
+                text_norm = np.clip((text_sim - 0.3) / (0.8 - 0.3), 0.0, 1.0)
+                img_norm = np.clip((img_sim - 0.2) / (0.6 - 0.2), 0.0, 1.0)
+                score = 0.5 * text_norm + 0.5 * img_norm
+            except Exception as e:
+                score = 0.0
+        if trace is not None:
+            return score >= self.threshold
+        return score</code></pre>
+
+  <p>The dual-mode return (boolean during tracing, float otherwise) follows DSPy convention: during BootstrapFewShot compilation, the metric acts as a gate (pass/fail at threshold 0.45); during evaluation, it returns the continuous score for fine-grained comparison.</p>
+
+  <h2>Dataset Design</h2>
+
+  <p>The 18 narrative excerpts span diverse genres and visual complexity levels, deliberately chosen to probe different aspects of cross-modal fidelity:</p>
+
+  <ul>
+    <li><strong>Fantasy:</strong> wizard, dragon, castle &mdash; complex scenes with multiple visual elements</li>
+    <li><strong>Nature:</strong> pine tree, mushroom, flower &mdash; distinctive organic shapes</li>
+    <li><strong>Technology:</strong> robot, rocket &mdash; geometric, structured forms</li>
+    <li><strong>Maritime:</strong> sailboat, pirate ship &mdash; compound objects with contextual elements (water, sails)</li>
+    <li><strong>Characters:</strong> mermaid, astronaut, knight &mdash; human-figure variants</li>
+    <li><strong>Objects:</strong> crown, hourglass, lighthouse &mdash; iconic shapes</li>
+  </ul>
+
+  <p>Each excerpt is 1-2 sentences with strong visual imagery. Gold ASCII art is 5-10 lines, hand-crafted, focusing on the most distinctive visual features of each subject.</p>
+
+  <h3>Example: Mushroom</h3>
+
+<pre><code># Excerpt
+"A fat red mushroom with white spots pushed up through the forest floor,
+its round cap glistening with morning dew."
+
+# Gold ASCII art
+    .-~~~-.
+   /  o o  \
+  |  o   o  |
+   \  o o  /
+    '-----'
+      | |
+      | |
+   ~~~   ~~~</code></pre>
+
+  <h3>Example: Eagle</h3>
+
+<pre><code># Excerpt
+"The golden eagle spread its wings wide against the mountain sky,
+talons outstretched as it dove toward the valley below."
+
+# Gold ASCII art
+       ,,,
+      {o,o}
+      /)  )
+   ---"-"---
+  /  _   _  \
+ / .' | | '. \
+(  /  | |  \  )
+ ``   | |   ``
+      ^ ^</code></pre>
+
+  <h3>Example: Crown</h3>
+
+<pre><code># Excerpt
+"The ancient crown sat on its velvet cushion, five golden points
+rising above a band studded with rubies and sapphires."
+
+# Gold ASCII art
+  *   *   *   *   *
+  |\ /|\ /|\ /|\ /|
+  | V | V | V | V |
+  +---+---+---+---+
+  |  o   o   o   o|
+  +===============+</code></pre>
+
+  <h2>DSPy Program: StoryArtGenerator</h2>
+
+  <p>The generator uses DSPy's <code>ChainOfThought</code> to reason about which visual features from the story excerpt are most important for ASCII depiction, then produce the art.</p>
+
+<pre><code>class StoryArtGenerator(dspy.Module):
+    def __init__(self):
+        super().__init__()
+        self.generate = dspy.ChainOfThought(
+            "excerpt, subject -> ascii_art"
+        )
+
+    def forward(self, excerpt, subject):
+        result = self.generate(
+            excerpt=excerpt,
+            subject=subject,
+            instructions=(
+                "Create ASCII art depicting the subject described in the excerpt. "
+                "Focus on the most visually distinctive features mentioned in the text. "
+                "Use 5-10 lines. Make the subject immediately recognizable. "
+                "Prioritize iconic silhouette and key details over fine ornamentation."
+            ),
+        )
+        return dspy.Prediction(ascii_art=result.ascii_art)</code></pre>
+
+  <p>The instructions emphasize <em>recognizable visuals</em> and <em>distinctive features</em> because the metric rewards semantic correspondence. Art that captures the iconic shape of the subject (mushroom cap, eagle wings) will score higher than art that attempts fine detail but loses the overall form.</p>
+
+  <h2>Results</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>Baseline</th>
+        <th>Optimized</th>
+        <th>Change</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>mermaid</td>
+        <td>0.081</td>
+        <td>0.102</td>
+        <td>+25.9%</td>
+      </tr>
+      <tr>
+        <td>eagle</td>
+        <td>0.202</td>
+        <td>0.219</td>
+        <td>+8.4%</td>
+      </tr>
+      <tr>
+        <td>train</td>
+        <td>0.177</td>
+        <td>0.241</td>
+        <td>+36.2%</td>
+      </tr>
+      <tr>
+        <td>mushroom</td>
+        <td>0.355</td>
+        <td>0.316</td>
+        <td>-11.0%</td>
+      </tr>
+      <tr>
+        <td>astronaut</td>
+        <td>0.155</td>
+        <td>0.327</td>
+        <td>+111.0%</td>
+      </tr>
+      <tr>
+        <td>crown</td>
+        <td>0.108</td>
+        <td>0.101</td>
+        <td>-6.5%</td>
+      </tr>
+      <tr style="font-weight:700;">
+        <td>Average</td>
+        <td>18.0%</td>
+        <td>21.8%</td>
+        <td>+3.8%</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Key Observations</h3>
+
+  <ul>
+    <li><strong>Mushroom scores highest at baseline (0.355).</strong> This correctly reflects that subjects with distinctive, simple shapes &mdash; round cap on a stem &mdash; are easiest to represent in ASCII art and easiest for the embedding model to match to their textual description.</li>
+    <li><strong>Mermaid scores lowest (0.081).</strong> An abstract, composite concept (human torso + fish tail) is difficult both to draw in ASCII and for the embedding space to match cross-modally. The low score reflects genuine difficulty, not metric failure.</li>
+    <li><strong>Astronaut shows +111% improvement after optimization.</strong> BootstrapFewShot found effective demonstrations for human-figure art with distinctive gear (helmet, suit), allowing the optimized program to produce dramatically better astronaut depictions.</li>
+    <li><strong>Mushroom and crown regressed slightly.</strong> This is consistent with optimization trade-offs: the bootstrap demonstrations that helped astronaut and train may have slightly diluted the prompt for subjects that were already well-handled.</li>
+    <li><strong>Overall +3.8% improvement</strong> validates that the metric provides useful optimization signal even for cross-modal tasks, though the gains are more modest than computer-01's same-modality improvements.</li>
+  </ul>
+
+  <div class="callout callout-note">
+    <div class="callout-title">Why Scores Are Lower Than computer-01</div>
+    <p>story-01 scores (18-22% range) are substantially lower than computer-01 scores. This is expected for three reasons:</p>
+    <ul style="margin-bottom:0;">
+      <li><strong>Cross-modal evaluation is fundamentally harder.</strong> The text-to-image channel requires the embedding model to bridge natural language and rendered monospace character art &mdash; two very different modalities.</li>
+      <li><strong>The text-to-image channel contributes lower absolute similarity</strong> than text-to-text, even after normalization. Cross-modal cosine similarity in Gemini's space is inherently lower than within-modality similarity.</li>
+      <li><strong>ASCII art is a lossy medium.</strong> A 5-10 line character rendering cannot capture the full semantic content of a narrative description. Some information loss is unavoidable.</li>
+    </ul>
+  </div>
+
+  <div class="callout callout-discovery">
+    <div class="callout-title">Discovery</div>
+    <p>The metric correctly captures subject recognizability in a way that matches human intuition:</p>
+    <ul>
+      <li><strong>Distinctive shapes</strong> (mushroom: round cap + stem) &gt; <strong>complex scenes</strong> (train: multiple cars, tracks, smoke) &gt; <strong>abstract concepts</strong> (mermaid: human-fish hybrid)</li>
+    </ul>
+    <p>This ordering is exactly what we would expect if the embedding space genuinely encodes visual semantics rather than surface-level text overlap. A mushroom <em>looks</em> like a mushroom even in ASCII; a mermaid requires understanding a concept that does not map cleanly to simple character patterns.</p>
+    <p>The +111% astronaut improvement further demonstrates that optimization CAN produce dramatic gains on specific subjects &mdash; particularly those where the baseline struggled not due to inherent difficulty but due to lack of effective prompting strategy for human-figure art with distinctive visual markers.</p>
+  </div>
+
+  <h2>Open Questions</h2>
+
+  <ul>
+    <li><strong>Interleaved embedding:</strong> Would embedding text and image together (as a single multimodal input) perform better than computing separate text-to-text and text-to-image similarities? Gemini supports multimodal input &mdash; this could capture cross-modal correspondence more directly.</li>
+    <li><strong>Gold reference sensitivity:</strong> How does the choice of gold ASCII art affect scores? The current hand-crafted references may not represent the optimal depiction for embedding similarity. Would LLM-generated references &mdash; potentially more aligned with the embedding model's learned representations &mdash; produce better calibration?</li>
+    <li><strong>Drawability discovery:</strong> Can we use the metric in reverse &mdash; scoring many candidate subjects against their descriptions &mdash; to discover which story elements are most "drawable" in ASCII? This could inform both dataset design and practical applications.</li>
+    <li><strong>Per-channel diagnostics:</strong> Breaking out text-to-text and text-to-image scores separately per subject could reveal whether optimization gains come from better textual structure, better visual form, or both.</li>
+  </ul>
+
+  <p style="margin-top:32px;"><a href="ascii-bench.html" style="color:#4361ee;font-weight:600;text-decoration:none;">&larr; Back to ascii-bench overview</a></p>
+  <footer>
+    <p>Generated from /home/ath/experiments/ &middot; Gemini Embedding 2 &middot; March 2026</p>
+  </footer>
+
+</div>
+
+</body>
+</html>

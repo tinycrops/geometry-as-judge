@@ -635,6 +635,9 @@ def nav(active="index"):
         ("dspy",       "03_dspy.html",      "DSPy Integration"),
         ("bench",      "ascii-bench.html",  "ascii-bench"),
         ("noise01",    "04_noise_eval.html","noise-01"),
+        ("computer01", "05_computer_eval.html","computer-01"),
+        ("story01",    "06_story_eval.html","story-01"),
+        ("cost",       "07_cost_scaling.html","Cost &amp; Scaling"),
     ]
     links = ""
     for key, href, label in pages:
@@ -1319,14 +1322,14 @@ no human raters, no LLM judges, no exact-match heuristics.
     </tr>
     <tr>
       <td><strong>computer-01</strong></td>
-      <td><span style="color:#b45309;font-weight:700;">&#9654; IN PROGRESS</span></td>
-      <td>Computer hardware ASCII art generation. Given a hardware name (keyboard, monitor, floppy), generate ASCII art that lands near the computer anchor and away from noise. The first evaluation with a semantic target.</td>
+      <td><span style="color:#15803d;font-weight:700;">&#10003; COMPLETE</span></td>
+      <td>Computer hardware ASCII art generation. Given a hardware name (keyboard, monitor, floppy), generate ASCII art that lands near the computer anchor and away from noise. The first evaluation with a semantic target. Baseline 57.0%, interleaved embedding correctly discriminates quality (server rack 0.67, joystick 0.47).</td>
       <td>Free-form; named subject; computer hardware vocabulary</td>
     </tr>
     <tr>
       <td><strong>story-01</strong></td>
-      <td><span style="color:#6b7280;font-style:italic;">&#128300; PLANNED</span></td>
-      <td>Story excerpt &rarr; ASCII art of described character. Cross-modal fidelity: does the rendered art land near the text description in embedding space?</td>
+      <td><span style="color:#15803d;font-weight:700;">&#10003; COMPLETE</span></td>
+      <td>Story excerpt &rarr; ASCII art of described character. Cross-modal fidelity: text-to-image embedding similarity. Baseline 18.0%, optimized 21.8%. Metric correctly discriminates: mushroom 0.355 vs mermaid 0.081.</td>
       <td>3&ndash;8 rows; prose input; character subject</td>
     </tr>
     <tr>

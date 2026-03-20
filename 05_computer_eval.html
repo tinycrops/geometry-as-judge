@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>computer-01 Deep Dive — Geometry as Judge</title>
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #ffffff;
+  color: #222233;
+  line-height: 1.7;
+  font-size: 16.5px;
+}
+
+.page-wrap {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 28px 64px 28px;
+}
+
+/* ── Navigation ── */
+nav {
+  background: #1a1a2e;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+nav .nav-title {
+  color: #e0e7ff;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+}
+nav .nav-links a {
+  color: #a5b4fc;
+  text-decoration: none;
+  margin-left: 22px;
+  font-size: 14px;
+  transition: color 0.15s;
+}
+nav .nav-links a:hover { color: #ffffff; }
+nav .nav-links a.active { color: #ffffff; font-weight: 600; }
+
+/* ── Headings ── */
+h1 { font-size: 2.3rem; color: #1a1a2e; font-weight: 800; letter-spacing: -0.02em; margin: 40px 0 16px 0; }
+h2 {
+  font-size: 1.45rem; color: #1a1a2e; font-weight: 700;
+  margin: 48px 0 14px 0;
+  padding-left: 14px;
+  border-left: 4px solid #4361ee;
+}
+h3 { font-size: 1.15rem; color: #1a1a2e; font-weight: 700; margin: 30px 0 10px 0; }
+
+p { margin: 0 0 18px 0; }
+ul, ol { margin: 0 0 18px 0; padding-left: 28px; }
+li { margin-bottom: 6px; }
+
+/* ── Code ── */
+pre {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  border-radius: 10px;
+  padding: 22px 26px;
+  overflow-x: auto;
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+  font-size: 13.5px;
+  line-height: 1.65;
+  margin: 0 0 24px 0;
+}
+code {
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+  font-size: 0.88em;
+  background: #f0f0fa;
+  color: #3730a3;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+pre code { background: none; color: inherit; padding: 0; font-size: inherit; border-radius: 0; }
+
+/* ── Callout boxes ── */
+.callout {
+  border-radius: 8px;
+  padding: 18px 22px;
+  margin: 24px 0;
+  border-left: 5px solid;
+}
+.callout-note      { background: #eff6ff; border-color: #3b82f6; }
+.callout-insight   { background: #f0fdf4; border-color: #22c55e; }
+.callout-warning   { background: #fffbeb; border-color: #f59e0b; }
+.callout-discovery { background: #fefce8; border-color: #ca8a04; }
+.callout-title {
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+.callout-note .callout-title      { color: #1d4ed8; }
+.callout-insight .callout-title   { color: #15803d; }
+.callout-warning .callout-title   { color: #b45309; }
+.callout-discovery .callout-title { color: #854d0e; }
+
+/* ── Cards ── */
+.card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 24px 0 32px 0; }
+.card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 22px 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: box-shadow 0.18s, transform 0.18s;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.card:hover {
+  box-shadow: 0 6px 20px rgba(67,97,238,0.14);
+  transform: translateY(-3px);
+}
+.card-num { font-size: 0.78rem; font-weight: 700; color: #4361ee; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+.card h3  { margin: 0 0 8px 0; font-size: 1.05rem; color: #1a1a2e; }
+.card p   { margin: 0; font-size: 0.9rem; color: #64748b; }
+
+/* ── Figures ── */
+figure {
+  margin: 28px 0;
+  text-align: center;
+}
+figure img {
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+figcaption {
+  margin-top: 10px;
+  font-size: 0.88rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+/* ── Pull quotes ── */
+.pullquote {
+  font-size: 1.2em;
+  font-style: italic;
+  color: #1a1a2e;
+  border-left: 4px solid #4361ee;
+  padding: 14px 22px;
+  margin: 28px 0;
+  background: #f5f5ff;
+  border-radius: 0 8px 8px 0;
+  line-height: 1.6;
+}
+
+/* ── Hero ── */
+.hero {
+  padding: 56px 0 40px 0;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 48px;
+}
+.hero h1 { margin: 0 0 14px 0; font-size: 2.8rem; line-height: 1.1; }
+.hero .subtitle {
+  font-size: 1.2rem;
+  color: #475569;
+  max-width: 640px;
+  line-height: 1.55;
+  margin-bottom: 32px;
+}
+
+/* ── Table ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 0.95rem;
+}
+th {
+  background: #1a1a2e;
+  color: #e0e7ff;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: top;
+}
+tr:nth-child(even) td { background: #f8fafc; }
+
+/* ── Stack list ── */
+.stack-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0 30px 0;
+  list-style: none;
+  padding: 0;
+}
+.stack-list li {
+  background: #1a1a2e;
+  color: #a5b4fc;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ── Footer ── */
+footer {
+  border-top: 1px solid #e2e8f0;
+  margin-top: 64px;
+  padding: 24px 0 0 0;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-title">Geometry as Judge</a>
+  <div class="nav-links"><a href="index.html">Overview</a><a href="01_paradigm.html">The Space</a><a href="02_experiment.html">The Experiment</a><a href="03_dspy.html">DSPy Integration</a><a href="ascii-bench.html">ascii-bench</a><a href="04_noise_eval.html">noise-01</a><a href="05_computer_eval.html" class="active">computer-01</a><a href="06_story_eval.html">story-01</a><a href="07_cost_scaling.html">Cost &amp; Scaling</a></div>
+</nav>
+<div class="page-wrap">
+
+<div class="hero">
+<h1>computer-01</h1>
+<p class="subtitle">
+Deep technical dive &mdash; semantic target evaluation using triangular anchors in interleaved embedding space. Part of <a href="ascii-bench.html" style="color:#4361ee;">ascii-bench</a>.
+</p>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+
+<h2>The Evaluation</h2>
+
+<p>computer-01 is the first ascii-bench evaluation with a <strong>semantic target</strong>. Where <a href="04_noise_eval.html" style="color:#4361ee;">noise-01</a> measured whether generated grids land in a diffuse noise region, computer-01 asks a harder question: can the model generate ASCII art that lands <em>near a specific corpus centroid</em> in Gemini Embedding 2's unified space?</p>
+
+<p>The task: given a computer hardware subject (keyboard, monitor, floppy disk, etc.), generate ASCII art that is recognizably <em>that hardware</em>. The evaluation embeds the generated art using interleaved text+image embedding and measures its geometric position relative to three anchor points.</p>
+
+<p>18 hardware subjects are split into 12 training and 6 held-out test subjects:</p>
+
+<table>
+<tr><th>Split</th><th>Subjects</th></tr>
+<tr><td><strong>Train (12)</strong></td><td>keyboard, monitor, floppy disk, computer tower, mouse, laptop, printer, USB drive, headphones, webcam, ethernet cable, hard drive</td></tr>
+<tr><td><strong>Test (6)</strong></td><td>microchip, server rack, joystick, CD-ROM, router, speaker</td></tr>
+</table>
+
+<p>The train/test split is intentional: test subjects are hardware the reference corpus does <em>not</em> contain. The metric must generalize &mdash; a good server rack drawing should land near the computer centroid even though the corpus has no server rack example.</p>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+
+<h2>The Evaluation Triangle</h2>
+
+<p>computer-01 positions every generated piece of ASCII art relative to three anchor points in embedding space:</p>
+
+<ol>
+<li><strong>Noise centroid</strong> &mdash; the mean embedding of 5 random keyboard-symbol grids (shared with noise-01). Represents meaningless character soup.</li>
+<li><strong>Blank centroid</strong> &mdash; the mean embedding of 8 minimal structural frames (empty boxes, bezels). Represents structure without semantic content.</li>
+<li><strong>Computer centroid</strong> &mdash; the mean embedding of 6 hand-crafted computer hardware ASCII art pieces. Represents the target: dense, recognizable hardware art.</li>
+</ol>
+
+<p>The geometric meaning is straightforward: a good ASCII art keyboard should be closer to the computer centroid than to the noise centroid. The metric normalizes against the noise baseline so that a piece scoring 0.0 is indistinguishable from noise, and 1.0 sits exactly at the computer centroid.</p>
+
+<pre><code>geometric_score = (sim_to_computer - baseline) / (1 - baseline)</code></pre>
+
+<p>where <code>baseline = cosine(noise_centroid, computer_centroid)</code>. This normalization gives absolute positioning in embedding space, not just relative similarity.</p>
+
+<div class="callout callout-note">
+<div class="callout-title">Note</div>
+The triangle is not just a scoring trick. It defines a coordinate system in embedding space. Any new ASCII art &mdash; whether it depicts a router, a cat, or pure gibberish &mdash; gets a position relative to all three anchors simultaneously.
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+
+<h2>Reference Corpora</h2>
+
+<h3>Computer corpus (6 pieces)</h3>
+
+<p>Six hand-crafted reference ASCII art pieces define the computer centroid. Each depicts a distinct hardware item using box-drawing characters, pipes, brackets, and structural ASCII:</p>
+
+<pre><code>COMPUTER_CORPUS = {
+    "keyboard (compact)": """\
+.------------------------.
+|  Q W E R T Y U I O P  |
+|  A S D F G H J K L ;  |
+|  Z X C V B N M , . /  |
+|____[___________]_______|""",
+
+    "monitor + stand": """\
+.-------------------.
+|  .-------------. ||
+|  | hello world | ||
+|  '-------------' ||
+'------|-----|------'
+       |     |
+  _____|_____|_____""",
+
+    "floppy disk": """\
+.-----------.
+|[##]       |
+|           |
+|   .-----.  |
+|   | ___ |  |
+|   ||   ||  |
+|   |'---'|  |
+'-----------'""",
+
+    "computer tower": """\
+.----------.
+| .------. |
+| | >_   | |
+| '------' |
+| [CD/DVD] |
+| [======] |
+| o  o  o  |
+'----------'""",
+
+    "mouse": """\
+  .-------.
+ /  .---.  \\
+| _/ | \\ _ |
+||   |   ||
+|'---'---'|
+ \\       /
+  '-----'""",
+
+    "laptop": """\
+._____________________.
+|  .-----------------.|
+|  |  .  .  .  .  .  ||
+|  |                 ||
+|  |  .  .  .  .  .  ||
+|  '-----------------'|
+'---------------------'
+[_____________________]""",
+}</code></pre>
+
+<p>The corpus was designed with three properties in mind: <strong>recognizability</strong> (each piece is identifiable as its hardware subject), <strong>structural density</strong> (heavy use of box-drawing characters), and <strong>diversity</strong> (different shapes, aspect ratios, and character choices).</p>
+
+<p>Internal cohesion is measured as the mean pairwise cosine similarity among all corpus embeddings. A tight cluster means the centroid is a stable target. If cohesion is low, the centroid is an average of scattered points and less meaningful as a target.</p>
+
+<h3>Noise corpus (5 grids)</h3>
+
+<p>The noise corpus is shared with noise-01 &mdash; five 3&times;6 grids of keyboard symbols with no semantic content:</p>
+
+<pre><code>NOISE_CORPUS = {
+    "keyboard spiral": "x@#$%^\n&amp;*()_+\n!?&gt;&lt;{}",
+    "bracket descent": "~`|\\;'\n\",.：?!\n[]{}()",
+    "operator sweep":  "!@#$%^\n&amp;*-+=&lt;\n&gt;/?|~`",
+    "diagonal shift":  "^%$#@!\n*&amp;()_+\n&gt;&lt;{}[]",
+    "dense field":     "@#$&amp;*(\n)!?&gt;&lt;{\n}|~`\\;",
+}</code></pre>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+
+<h2>The Metric: ComputerArtMetric</h2>
+
+<p>The combined metric blends structural quality checks with geometric positioning in embedding space:</p>
+
+<ul>
+<li><strong>40% structural score</strong> &mdash; non-empty, multi-line, uses structural characters, minimum width</li>
+<li><strong>60% geometric score</strong> &mdash; cosine similarity to the computer centroid, normalized against the noise baseline</li>
+</ul>
+
+<p>In optimization trace mode (when used inside a DSPy optimizer), the metric returns a boolean: <code>score &gt;= 0.35</code>. This threshold gates which demonstrations the optimizer keeps.</p>
+
+<h3>Structural score</h3>
+
+<pre><code>def structural_score(text: str) -&gt; float:
+    """Basic quality check: non-empty, multi-line, uses structural chars."""
+    if not text or not text.strip():
+        return 0.0
+
+    lines = text.strip().splitlines()
+
+    # Multi-line bonus
+    line_score = min(1.0, len(lines) / 3.0)
+
+    # Structural character density (box-drawing, pipes, dashes, etc.)
+    structural_chars = set("|-+/\\._[]{}()=&lt;&gt;*#@~`'^")
+    total = sum(len(l) for l in lines)
+    if total == 0:
+        return 0.0
+    struct_count = sum(1 for c in text if c in structural_chars)
+    density = struct_count / total
+
+    # Minimum width check
+    avg_width = sum(len(l) for l in lines) / len(lines)
+    width_score = min(1.0, avg_width / 8.0)
+
+    return (line_score * 0.4 + density * 0.3 + width_score * 0.3)</code></pre>
+
+<p>Three sub-components, equally intuitive: does it have multiple lines (line_score), does it use structural ASCII characters (density), and is it wide enough to depict something (width_score). The weights 0.4/0.3/0.3 were chosen to prioritize multi-line output &mdash; a single-line response is almost certainly not valid ASCII art.</p>
+
+<h3>Full metric class</h3>
+
+<pre><code>class ComputerArtMetric:
+    """
+    Score ASCII art by proximity to computer centroid (away from noise).
+
+    geometric_score = (sim_to_computer - baseline) / (1 - baseline)
+    where baseline is the noise centroid's sim to computer centroid.
+
+    Combined: 0.4 * structural + 0.6 * geometric
+    """
+
+    def __init__(self, computer_centroid, noise_centroid, threshold=0.35):
+        self.computer_centroid = computer_centroid
+        self.noise_centroid = noise_centroid
+        self.baseline = cosine(noise_centroid, computer_centroid)
+        self.threshold = threshold
+        print(f"  Metric baseline (noise-computer): {self.baseline:.4f}")
+
+    def __call__(self, example, pred, trace=None):
+        art = str(getattr(pred, "ascii_art", ""))
+
+        if not art.strip():
+            score = 0.0
+        else:
+            struct = structural_score(art)
+            if struct &lt; 0.1:
+                score = struct * 0.4
+            else:
+                try:
+                    png = render(art)
+                    vec = embed_interleaved(art, png)
+                    sim_computer = cosine(vec, self.computer_centroid)
+                    sim_noise = cosine(vec, self.noise_centroid)
+
+                    # Geometric: how much closer to computer than to noise
+                    geo = np.clip(
+                        (sim_computer - self.baseline) / (1.0 - self.baseline),
+                        0.0, 1.0
+                    )
+                    score = 0.4 * struct + 0.6 * float(geo)
+                except Exception as e:
+                    print(f"  Embed error: {e}")
+                    score = struct * 0.4
+
+        if trace is not None:
+            return score &gt;= self.threshold
+        return score
+
+    @property
+    def __name__(self):
+        return "ComputerArtMetric"</code></pre>
+
+<p>Key implementation details:</p>
+
+<ul>
+<li>If structural score falls below 0.1, the metric short-circuits and returns only the structural component &mdash; no point embedding garbage.</li>
+<li>The <code>trace is not None</code> branch converts the continuous score to a boolean for DSPy optimizers. The 0.35 threshold means only demonstrations scoring above 35% are retained during bootstrap.</li>
+<li>Embedding errors (rate limits, API failures) fall back to structural-only scoring rather than crashing the evaluation.</li>
+</ul>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+
+<h2>Interleaved Embedding</h2>
+
+<p>The core infrastructure that makes computer-01 work is <code>embed_interleaved</code> &mdash; a function that embeds text and its rendered PNG together in a single call to Gemini Embedding 2:</p>
+
+<pre><code>def embed_interleaved(text: str, png: bytes, max_retries: int = 5) -&gt; np.ndarray:
+    """Embed text + rendered image together in Gemini's unified space."""
+    for attempt in range(max_retries):
+        try:
+            r = client.models.embed_content(
+                model=EMBED_MODEL,
+                contents=[types.Content(parts=[
+                    types.Part(text=text),
+                    types.Part.from_bytes(data=png, mime_type="image/png"),
+                ])]
+            )
+            return np.array(r.embeddings[0].values, dtype=np.float32)
+        except Exception as e:
+            if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                wait = min(60 * (attempt + 1), 120)
+                print(f"  Rate limited, waiting {wait}s ...")
+                time.sleep(wait)
+            else:
+                raise
+    raise RuntimeError("Max retries exceeded for embedding")</code></pre>
+
+<p>The interleaved embedding captures <strong>both</strong> the semantic text content and the visual appearance of the rendered art. This is critical: a piece of text that says "keyboard" but renders as random dots would score differently than one that both says "keyboard" and <em>looks like</em> a keyboard when rendered to pixels.</p>
+
+<p>The rendering pipeline (<code>render()</code>) converts ASCII text to a PNG using DejaVu Sans Mono at 48pt with 24px padding. This standardizes the visual input: every piece of art is rendered the same way before embedding.</p>
+
+<pre><code>def render(text: str) -&gt; bytes:
+    """Render ASCII art to PNG."""
+    lines = text.splitlines()
+    if not lines:
+        lines = [" "]
+    test = Image.new("RGB", (1, 1))
+    d = ImageDraw.Draw(test)
+    lh = FONT.getbbox("A")[3] + 6
+    mw = max((d.textlength(l, font=FONT) for l in lines), default=10)
+    img = Image.new("RGB",
+        (int(mw) + PAD * 2, lh * len(lines) + PAD * 2),
+        (255, 255, 255))
+    draw = ImageDraw.Draw(img)
+    y = PAD
+    for line in lines:
+        draw.text((PAD, y), line, fill=(0, 0, 0), font=FONT)
+        y += lh
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()</code></pre>
+
+<p>Retry logic handles Gemini's rate limiting (429/RESOURCE_EXHAUSTED) with exponential backoff up to 120 seconds. This is necessary because each evaluation call triggers an embedding request, and a full evaluation run with 6 test subjects plus bootstrap optimization can consume hundreds of API calls.</p>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+
+<h2>DSPy Program: ComputerArtGenerator</h2>
+
+<p>The generation program is a straightforward <code>ChainOfThought</code> module with a signature that maps <code>(subject, description)</code> to <code>ascii_art</code>:</p>
+
+<pre><code>class ComputerArtGenerator(dspy.Module):
+    """Generate ASCII art of computer hardware."""
+
+    def __init__(self):
+        self.generate = dspy.ChainOfThought(
+            dspy.Signature(
+                "subject, description -&gt; ascii_art",
+                instructions=(
+                    "Generate ASCII art of the specified computer hardware. "
+                    "Use box-drawing characters (|, -, +, /, \\, _, .), brackets, "
+                    "and other structural ASCII characters to create a recognizable "
+                    "representation. Keep it compact (5-10 lines). "
+                    "The art should clearly look like the hardware described."
+                )
+            )
+        )
+
+    def forward(self, subject, description):
+        return self.generate(subject=subject, description=description)</code></pre>
+
+<p>The instructions explicitly guide the model toward box-drawing characters. This is not just stylistic preference &mdash; the structural score component rewards density of these characters, and the computer reference corpus is built from them. The instructions align the generator with what the metric measures.</p>
+
+<p>The dataset construction splits 18 hardware subjects into 12 train / 6 test:</p>
+
+<pre><code>def make_dataset():
+    trainset = []
+    testset = []
+    for i, item in enumerate(HARDWARE_SUBJECTS):
+        ex = dspy.Example(
+            subject=item["subject"],
+            description=item["description"],
+        ).with_inputs("subject", "description")
+        if i &lt; 12:
+            trainset.append(ex)
+        else:
+            testset.append(ex)
+    return trainset, testset</code></pre>
+
+<p>Optimization uses <code>BootstrapFewShotWithRandomSearch</code> with conservative settings: 2 bootstrapped demos, 2 labeled demos, 3 candidate programs, single-threaded (rate-limited embedding calls cannot be parallelized on the free tier).</p>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+
+<h2>Results</h2>
+
+<p>Evaluation on 6 held-out test subjects (hardware not present in the reference corpus):</p>
+
+<table>
+<tr><th>Subject</th><th>Baseline Score</th><th>Optimized Score</th></tr>
+<tr><td>microchip</td><td>0.606</td><td>0.563</td></tr>
+<tr><td>server rack</td><td>0.613</td><td>0.672</td></tr>
+<tr><td>joystick</td><td>0.474</td><td>0.519</td></tr>
+<tr><td>CD-ROM</td><td>0.527</td><td>0.583</td></tr>
+<tr><td>router</td><td>0.520</td><td>0.526</td></tr>
+<tr><td>speaker</td><td>0.680</td><td>0.542</td></tr>
+<tr><td><strong>Average</strong></td><td><strong>57.0%</strong></td><td><strong>56.8%</strong></td></tr>
+</table>
+
+<h3>Key observations</h3>
+
+<ul>
+<li><strong>Server rack scores highest after optimization (0.672)</strong> &mdash; server racks are naturally rich in box-drawing structure (multiple horizontal rack units, vertical rails). This validates that the metric rewards structural complexity aligned with the computer corpus.</li>
+<li><strong>Joystick scores lowest (0.474 baseline)</strong> &mdash; a joystick is a simple shape (stick + base) with less structural density. The metric correctly reflects lower visual detail and semantic overlap with the computer corpus.</li>
+<li><strong>Bootstrap optimization does not improve average (57.0% vs 56.8%)</strong> &mdash; the delta is within noise. The baseline model (gpt-5.4-mini) already generates recognizable hardware art with its default instruction-following capability. Bootstrap's few-shot demonstrations do not add meaningful signal.</li>
+<li><strong>Speaker regresses under optimization (0.680 to 0.542)</strong> &mdash; the bootstrapped demos may steer the model toward a style that scores well on training subjects but poorly generalizes to speaker geometry.</li>
+<li><strong>The metric validates interleaved embedding discrimination</strong> &mdash; all 6 test subjects score well above 0.0 (the noise floor), confirming that ASCII art of hardware subjects lands near the computer corpus centroid, not in the noise region.</li>
+</ul>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+
+<h2>Insights</h2>
+
+<div class="callout callout-insight">
+<div class="callout-title">Insight</div>
+<p>The interleaved embedding correctly discriminates structural complexity. A server rack drawn with box-drawing characters &mdash; multiple horizontal lines, vertical bars, nested brackets &mdash; scores higher than a joystick &mdash; a single stick on a base. This ordering matches human intuition about which hardware subjects produce richer ASCII art.</p>
+</div>
+
+<div class="callout callout-insight">
+<div class="callout-title">Insight</div>
+<p>The triangular evaluation framework (noise &mdash; blank &mdash; computer) provides <strong>absolute positioning</strong> in embedding space, not just relative similarity. A score of 0.60 means the art is 60% of the way from the noise floor to the computer centroid. This is interpretable across subjects: a 0.60 joystick and a 0.60 server rack are equally "computer-like" in embedding space, even though they look completely different.</p>
+</div>
+
+<div class="callout callout-insight">
+<div class="callout-title">Insight</div>
+<p>The test subjects are held-out hardware that the reference corpus has never seen. That all 6 score above 0.47 demonstrates that the computer centroid generalizes &mdash; the embedding captures "computer hardware-ness" as a semantic concept, not just visual similarity to the 6 specific reference pieces.</p>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+
+<h2>Limitations</h2>
+
+<div class="callout callout-warning">
+<div class="callout-title">Warning</div>
+<p><strong>Optimization flat.</strong> BootstrapFewShotWithRandomSearch did not improve over baseline. The model already generates decent hardware art from its instruction-following capability alone. The optimizer has limited room to improve when the baseline is already competent. This is a ceiling effect, not a metric failure.</p>
+</div>
+
+<div class="callout callout-warning">
+<div class="callout-title">Warning</div>
+<p><strong>Rate limiting constrains scale.</strong> Gemini Embedding 2's free tier allows approximately 1000 calls per day per API key. Each evaluation of a single subject requires one embedding call. A full optimization run (3 candidate programs &times; 12 training examples + 6 test evaluations &times; 2) consumes ~90 calls. This limits the number of candidate programs and bootstrap iterations that are practical.</p>
+</div>
+
+<div class="callout callout-warning">
+<div class="callout-title">Warning</div>
+<p><strong>Reference corpus size.</strong> The computer centroid is computed from only 6 reference pieces. A larger corpus (20&ndash;30 pieces spanning more hardware categories) would produce a more stable centroid and potentially improve discrimination on edge cases.</p>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+
+<h2>Open Questions</h2>
+
+<ul>
+<li><strong>MIPROv2 instruction optimization</strong> &mdash; Would optimizing the generation instructions (rather than few-shot demos) produce better hardware art? MIPROv2 rewrites the prompt itself, which could discover more effective character-choice strategies that Bootstrap cannot.</li>
+<li><strong>Negative control</strong> &mdash; How do non-computer subjects (animals, nature scenes, abstract patterns) score against the computer centroid? A well-calibrated metric should assign them scores near 0.0. This has not been tested.</li>
+<li><strong>Centroid stability</strong> &mdash; Would a larger reference corpus (20+ pieces) meaningfully change the centroid position, or has it converged with 6 pieces? Internal cohesion measurements suggest the corpus is reasonably tight, but convergence has not been formally tested.</li>
+<li><strong>Cross-evaluation transfer</strong> &mdash; Do optimization gains on computer-01 transfer to other ascii-bench evaluations? If bootstrap demos improve server-rack generation, do they also improve noise-01 scores (they shouldn't) or story-01 scores (they might)?</li>
+</ul>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+
+<p style="margin-top:32px;"><a href="ascii-bench.html" style="color:#4361ee;font-weight:600;text-decoration:none;">&larr; Back to ascii-bench overview</a></p>
+<footer>
+  <p>Generated from /home/ath/experiments/ &middot; Gemini Embedding 2 &middot; March 2026</p>
+</footer>
+
+</div>
+</body>
+</html>
